@@ -1,0 +1,5 @@
+# pip install -r requirements.txt
+Django>=1.8,<1.9
+gunicorn
+# Used when Postgresql is used as the backend
+psycopg2
