@@ -97,7 +97,12 @@ Services which need more properties to define an instances have dedicated models
 Currently:
 
 * RDS
-* Nectar
+* Nectar: cloud computing
+
+Nectar projects (`https://keystone.rc.nectar.org.au:5000/v3/projects/openstack_id`)
+can have multiple managers. For billing purpose, only one manager is treated as the
+contractor in this system. The rest of information in regarding to Nectar projects
+can be retrieved through its `openstack_id` on Nectar.
 
 ###Queries could be:
 
@@ -122,6 +127,9 @@ For interactive access in browser, define urls after:
 ##Notes
 
 0. Ignore migrations until models are stable and deployed.
+0. Should consider a way of saving random information of an object. For example:
+   contractor person of Nectar service has `openstack_id`. Currently, it has not
+   be saved any where.
 0. Event handlers have not been conceptually developed. Singals will be used and
    currently they arecommented out.
 0. To be considered:

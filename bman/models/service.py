@@ -79,12 +79,13 @@ class RDS(BasicService):
 
 class Nectar(BasicService):
     """Provide tracking to Nectar projects"""
-    keystone_id = models.CharField(max_length=100)
-    tennant = models.CharField(help_text='Nectar project name', max_length=100, blank=True, default='')
-    tennant_id = models.CharField(max_length=32)
+    tenant = models.CharField(help_text='Nectar project name', max_length=100, blank=True, default='')
+    openstack_id = models.CharField(max_length=36)
+    description = models.TextField(blank=True, default='')
+    allocation_id = models.PositiveIntegerField(null=True)
 
     def __str__(self):
-        return "%s (%s) is bound to %s" % (self.tennant, self.tennant_id, self.contractor.person)
+        return "%s (%s) is bound to %s" % (self.tenant, self.openstack_id, self.contractor.person)
 
     def descriptive_name(self):
         return 'Nectar'

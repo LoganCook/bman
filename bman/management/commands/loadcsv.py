@@ -111,7 +111,7 @@ ACCOUNT = {'billing_org': 'Billing Organisation', 'username': 'Username'}
 ACCESS = {'HPC': 'Service - HPC', 'STORAGE': 'Service - Storage'}
 RDSFIELDS = {'allocation_num': 'Service - RDS Allocation #', 'filesystem': 'RDS Filesystem',
        'approved_size': 'RDS Approved GB', 'collection_name': 'RDS Collection Name'}
-NECTAR = {'keystone_id': 'Nectar ID (Keystone)', 'tennant': 'Tennants', 'tennant_id': 'Tennant ID'}
+NECTAR = {'tenant': 'Tennants', 'openstack_id': 'Tennant ID'}
 
 def get_normalised_role(role):
     normalised = {'EMPLOYEE': 'Employment', 'STUDENT': 'Study'}
@@ -150,7 +150,7 @@ def get_model_data(row, field_mapping):
     data = {}
     for field in field_mapping.keys():
         if field_mapping[field] in row:
-            data[field] = row[field_mapping[field]]
+            data[field] = row[field_mapping[field]].strip()
 
     return data
 
@@ -274,7 +274,6 @@ def _csv_to_supervisor(csv_row_dict, student):
     except Exception as e:
         raise FieldDoesNotExist('Cannot create or use %s as supervisor for %s. \n\t%s' % (supervisor_cell, student.person.full_name, str(e)))
 
-KEYSTONEID = re.compile(r"^[a-z]+\.[a-z]+$")
 ALLOCATION_NUM = re.compile(r"[A-Z]+[0-9]+")
 def _csv_to_services(csv_row_dict, role, access_services):
     data = get_model_data(csv_row_dict, ACCESS)
@@ -291,7 +290,8 @@ def _csv_to_services(csv_row_dict, role, access_services):
         RDS.objects.get_or_create(contractor=role, **data)
 
     data = get_model_data(csv_row_dict, NECTAR)
-    if KEYSTONEID.match(data['keystone_id']):
+    # As long as there is tenant name, ingest it
+    if len(data['tenant']):
         Nectar.objects.get_or_create(contractor=role, **data)
 
 def _load(fn):
@@ -313,7 +313,7 @@ def _load(fn):
             _csv_to_account(row, role)
             cache.append((row, role))
         except Exception as e:
-            print(e)
+            print('Cannot create model: %s' % e)
             print('Insightly_ID=%(Insightly ID)s, email=%(Email Address)s, name=%(Full Name)s, username=%(Username)s\n' % row)
 
       #After all persons have been loaded, try to hook up with supervisor
@@ -321,7 +321,7 @@ def _load(fn):
         try:
             _csv_to_supervisor(row, role)
         except Exception as e:
-            print(e)
+            print('Fail to establish supervison relationship: %s' % e)
             print('Insightly_ID=%(Insightly ID)s, email=%(Email Address)s, name=%(Full Name)s, username=%(Username)s\n' % row)
 
 class Command(BaseCommand):
