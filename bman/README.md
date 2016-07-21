@@ -17,32 +17,32 @@
   paid by another Organisation (this covers visiting Persons, or cooperation).
 * Without an Account, received services should be charged to Role's Organisation.
 * *Should a Role has multiple Accounts for different services? Should them be bound
-  to some scopes: server, domain?*
+  to some scopes: server, domain?* Currently, one role one account seems fine.
 
 ##Relationship
 
 Relationships can be described as directed graphs. The most common way to
-describe a replationship is used to define which entity is the head, which is the tail.
+describe a relationship is used to define which entity is the head, which is the tail.
 Maybe both directions are equally favoured or only the common one is
 preferred. Starts from tail and ends at head. The interpretation depends on the
 direction when applied: e.g. forward or backward. The meaning of it can be
 displayed by labels. As there are two directions, there are two labels. When
 direction is not important, the labels can be identical. Same types of relationships
 e.g. root-leaf, should always follow the same pattern. The relationship between a
-university and its employees should always have university (Oranisation) as tail,
-employees (Persons) as tails. In such way, the queies can be optimised.
+university and its employees should always have university (Organisation) as tail,
+employees (Persons) as tails. In such way, the queries can be optimised.
 
 0. `name`: parent-child
 0. `tail`: entity (object type) of tail node
-0. `head`: entiy (object type) of head node
+0. `head`: entity (object type) of head node
 0. `forward`: label read from tail to head
 0. `backward`: label read from head to tail
 
 ###Examples
 
-* UofA is the parent of all its schools and facuties.
+* UofA is the parent of all its schools and faculties.
 * School A is child of UofA.
-* School A is child of facuty A.
+* School A is child of faculty A.
 * School A hosts org B.
 * John Smith works for UofA.
 * John Smith is a lecture at School A.
@@ -52,17 +52,27 @@ employees (Persons) as tails. In such way, the queies can be optimised.
 
 Role binds a Person to an Organisation during a time period.
 
-###Role manangement
+###Role management
 John Smith studied at School of A, UofA as a student between Year A and B. Since
 Year C, he has been a staff member of Hospital H. Roles have been changed once:
 Student -> Staff member which had email address, role type (RelationshipType) and
 organisation changed.
 
-A natural Person cannot apply an account with eRSA. `username` (account name) is only
-assigned to a Role and never deleted. The status maybe changed, such as disabled for
-a period of time. Even `username` is an attrbute of a Role, it is construed for a
-Person based on Person's information. It is one of unique identifiers of a Person
-and kept when `Role` changes.
+A natural Person cannot apply an account with eRSA. Person has to
+belong to an organisation. Default billing organisation is Role's
+Organisation. `username` (account name) is only assigned to a Role in a
+billing context and never deleted. It is an unique identifier for
+billing purpose. John Smith works for more than one institutions
+therefore he has multiple roles. For billing purpose, in the service
+(machine) world he should have multiple accounts. This is even more
+useful when we do not care outside of machine world what Roles he has
+as long as we know where the bills to send to. So as long as he has one
+role, we will trust what he said about splitting bills between
+organisations.
+
+The status of Role may change, such as disabled for a period of time.
+`username` is construed for a Person based on Person's information. It
+is an unique identifier of a Person and is kept when `Role` changes.
 
 ###Role change events
 
@@ -130,14 +140,14 @@ For interactive access in browser, define urls after:
 0. Should consider a way of saving random information of an object. For example:
    contractor person of Nectar service has `openstack_id`. Currently, it has not
    be saved any where.
-0. Event handlers have not been conceptually developed. Singals will be used and
-   currently they arecommented out.
+0. Event handlers have not been conceptually developed. Signals will be used and
+   currently they are commented out.
 0. To be considered:
     * Biller - a role object for billing purpose - send to
     * Invoices and their management: export to csv, pdf, pulling in other information from system like Xero
     * Prices and their history
-0. Provide a better price if some one bundle multiple services together. Bundled catalog
-   which include not only one catalog item. In such case, containing catalog's price
-   will invalid the included catalog items. Most likely, the unit will be meaningless:
-   4 VMs with 1TB storage.
+0. Provide a better price if some one bundle multiple services together. Bundled catalogues
+   which include more than one catalogue item. The price will need to be redefined. For example,
+   the price for 4 VMs with 1TB storage should be different to 4 normal VMs with normal storage
+   requirements.
 

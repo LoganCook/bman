@@ -118,13 +118,13 @@ class Role(models.Model):
 class Account(models.Model):
     """Billing account of a role
 
-       One role can have multiple accounts
+       One role has one account
     """
     STATUS = (
         ('A', 'active'),
         ('T', 'terminated'),
     )
-    role = models.ForeignKey(Role)
+    role = models.OneToOneField(Role)
     username = models.CharField(max_length=30,
         help_text='Required. 30 characters or fewer. Letters, digits and . _ only.',
         validators=[
