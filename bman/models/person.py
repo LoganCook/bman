@@ -34,8 +34,17 @@ class Person(models.Model):
         services = []
         roles = self.role_set.all()
         for role in roles:
-            #better to auto-discover services from which to query
             services.extend(role.get_all_services())
+        return services
+
+    def get_service(self, service):
+        """All services this Person linked to"""
+        services = []
+        roles = self.role_set.all()
+        for role in roles:
+            result = role.get_service(service)
+            if result:
+                services.append(result)
         return services
 
 
@@ -76,6 +85,17 @@ class Role(models.Model):
         services.extend(self.nectar_set.all())
         return services
 
+    def get_service(self, service):
+        """Get a service of a role linked to
+
+           param service: name of a service, has to be name of one of classess in service.py
+        """
+        service = service.lower() + '_set'
+        if hasattr(self, service):
+            return getattr(self, service).first()
+        else:
+            return None
+
     def get_students(self):
         #Only empolyee can be a supervisor
         students = []
@@ -96,6 +116,10 @@ class Role(models.Model):
 
 
 class Account(models.Model):
+    """Billing account of a role
+
+       One role can have multiple accounts
+    """
     STATUS = (
         ('A', 'active'),
         ('T', 'terminated'),

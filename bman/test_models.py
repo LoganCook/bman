@@ -114,3 +114,13 @@ class ServiceTestCase(TestCase):
     def test_person_services(self):
         p = Person.objects.get(first_name='John', last_name='Smith')
         self.assertTrue(len(p.get_all_services()) > 0)
+
+    def test_organisation_to_a_service(self):
+        uofa = Organisation.objects.get(name="University of Adelaide")
+        self.assertEqual(len(uofa.get_service('AccessService')), 1)
+        self.assertEqual(len(uofa.get_service('NotExist')), 0)
+
+    def test_person_to_a_service(self):
+        p = Person.objects.get(first_name='John', last_name='Smith')
+        self.assertIsInstance(p.get_service('AccessService')[0], AccessService)
+        self.assertEqual(len(p.get_service('NotExist')), 0)
