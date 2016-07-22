@@ -37,12 +37,15 @@ class Person(models.Model):
             services.extend(role.get_all_services())
         return services
 
-    def get_service(self, service):
+    def get_service(self, name=None):
         """All services this Person linked to"""
+        if name is None:
+            return []
+
         services = []
         roles = self.role_set.all()
         for role in roles:
-            result = role.get_service(service)
+            result = role.get_service(name=name)
             if result:
                 services.append(result)
         return services
@@ -85,12 +88,15 @@ class Role(models.Model):
         services.extend(self.nectar_set.all())
         return services
 
-    def get_service(self, service):
+    def get_service(self, name=None):
         """Get a service of a role linked to
 
            param service: name of a service, has to be name of one of classess in service.py
         """
-        service = service.lower() + '_set'
+        if name is None:
+            return None
+
+        service = name.lower() + '_set'
         if hasattr(self, service):
             return getattr(self, service).first()
         else:

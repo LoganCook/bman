@@ -52,11 +52,10 @@ class SkeletonView(View):
     form_class = None
 
     def dispatch(self, request, *args, **kwargs):
-        to_be_loaded = _nomalise_form_name(kwargs['target'])
-
         # Save all args in parsed url match and query string.
         # Key with multiple values will have only one left: q = QueryDict('a=1&a=3&a=5') -> {'a': '5'}
         self.kwargs.update(request.GET.dict())
+        to_be_loaded = _nomalise_form_name(self.kwargs.pop('target'))
         print("Dispatch method called from %s for : " % self.__class__.__name__, to_be_loaded)
         if to_be_loaded in self.allowed_classess:
             self.form_class = getattr(sys.modules[FORM_MODULE_NAME], to_be_loaded)
@@ -130,11 +129,15 @@ def object_should_be_saved(obj):
 # Need to be able to handle token for security by extending dispatch.
 class ApiObjectsView(SkeletonView):
     def get(self, request, *args, **kwargs):
-        # Return value's format is serialized model instance: https://docs.djangoproject.com/en/1.8/topics/serialization/#serialization-formats-json
+        # Return value's format is JSON: either by serialization or raw data
+        # https://docs.djangoproject.com/en/1.8/topics/serialization/#serialization-formats-json
         # TODO: investigate if this format is efficient
+        # serve url in this format: /target/(id)/(method)?arg1=one&arg2=two
+        # target has been popped, id, method and query parameters arg1 and arg2
+        # are in self.kwargs
         data = json.dumps({})
 
-        if len(self.kwargs) > 1: #more than just :target
+        if len(self.kwargs) >= 1: #more than just :id, could have args for class methods.
             if 'id' in self.kwargs:
                 # Get instance of that model
                 query_target = self.get_object()
@@ -142,7 +145,10 @@ class ApiObjectsView(SkeletonView):
                 # Get model class
                 query_target = self.form_class.Meta.model
             if 'method' in self.kwargs:
-                method_data = getattr(query_target, self.kwargs['method'])()
+                method = self.kwargs.pop('method')
+                # remove consumed args which is not needed in methods
+                del self.kwargs['id']
+                method_data = getattr(query_target, method)(**self.kwargs)
                 if isinstance(method_data, QuerySet):
                     data = serializers.serialize('json', method_data)
                 else:

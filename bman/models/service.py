@@ -35,7 +35,7 @@ class BasicService(models.Model):
         ('S', 'suspended'),
         ('D', 'ended'),
     )
-    #Might be a one-to-one, at least spreadsheet only allows
+    #Might be a one-to-one, at least spreadsheet only allows one
     contractor = models.ForeignKey(Role)
     start_date = models.DateField(blank=True, null=True)
     end_date = models.DateField(blank=True, null=True)
@@ -78,9 +78,11 @@ class RDS(BasicService):
         return 'RDS'
 
 class Nectar(BasicService):
-    """Provide tracking to Nectar projects"""
+    """Provide tracking to Nectar projects
+    One project for billing purpose only allow to have one contractor.
+    """
     tenant = models.CharField(help_text='Nectar project name', max_length=100, blank=True, default='')
-    openstack_id = models.CharField(max_length=36)
+    openstack_id = models.CharField(max_length=36, unique=True)
     description = models.TextField(blank=True, default='')
     allocation_id = models.PositiveIntegerField(null=True)
 

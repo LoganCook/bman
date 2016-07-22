@@ -111,12 +111,15 @@ class Organisation(models.Model):
             services.extend(account.role.get_all_services())
         return services
 
-    def get_service(self, service):
+    def get_service(self, name=None):
         """Get all instances of a service this Organisation uses"""
+        if not name:
+            return []
+
         accounts = self.get_all_accounts()
         services = []
         for account in accounts:
-            result = account.role.get_service(service)
+            result = account.role.get_service(name=name)
             if result:
                 services.append(result)
         return services

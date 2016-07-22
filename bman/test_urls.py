@@ -12,9 +12,11 @@ from django.core.urlresolvers import resolve, reverse
 class UrlTestCase(unittest.TestCase):
     kwargs_noid = {'target': 'rubbish'}
     kwargs_withid = {'target': 'rubbish', 'id': 1}
+    kwargs_with_method = {'target': 'rubbish', 'id': 1, 'method': 'test'}
 
     url_noid = '/rubbish/'
     url_withid = '/rubbish/1/'
+    url_with_method = '/rubbish/1/test/'
 
     def test_reverse_forms(self):
         url = reverse('creation-forms', kwargs=self.kwargs_noid)
@@ -54,9 +56,18 @@ class UrlTestCase(unittest.TestCase):
         resolved = resolve('/api' + self.url_withid)
         self.assertEqual(resolved.view_name, 'api-object')
 
+        resolved = resolve('/api' + self.url_with_method)
+        self.assertEqual(resolved.view_name, 'api-object-method')
+
+        resolved = resolve('/api' + self.url_with_method)
+        self.assertEqual(resolved.view_name, 'api-object-method')
+
     def test_reverse_api(self):
         url = reverse('api-objects', kwargs=self.kwargs_noid)
         self.assertEqual(url, '/api' + self.url_noid)
 
         url = reverse('api-object', kwargs=self.kwargs_withid)
         self.assertEqual(url, '/api' + self.url_withid)
+
+        url = reverse('api-object-method', kwargs=self.kwargs_with_method)
+        self.assertEqual(url, '/api' + self.url_with_method)

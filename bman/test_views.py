@@ -1,11 +1,14 @@
 """
 Unit tests for views.
 """
+from django.test import TestCase, Client
 
-import unittest
-from django.test import Client
+from bman.models import Person
 
-class ViewTestCase(unittest.TestCase):
+class ViewTestCase(TestCase):
+    def setUp(self):
+        Person.objects.create(first_name="John", last_name="Smith")
+
     def test_get_allowed_form(self):
         c = Client()
         response = c.get('/forms/Relationship/')
@@ -28,7 +31,7 @@ class ViewTestCase(unittest.TestCase):
         from django.core.exceptions import ObjectDoesNotExist
         c = Client()
         response = c.get('/objects/Person/1/')
-        self.assertEqual(response.status_code, 404)
+        self.assertEqual(response.status_code, 200)
 
     def test_api_post_with_id_not_allowed(self):
         c = Client()
@@ -42,3 +45,9 @@ class ViewTestCase(unittest.TestCase):
 
         response = c.delete('/api/person/')
         self.assertEqual(response.status_code, 400)
+
+    def test_api_call_with_args(self):
+        from bman.models import Organisation
+        c = Client()
+        response = c.get('/api/person/1/get_service/?name=nectar')
+        self.assertEqual(response.status_code, 200)
