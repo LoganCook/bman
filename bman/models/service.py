@@ -91,3 +91,13 @@ class Nectar(BasicService):
 
     def descriptive_name(self):
         return 'Nectar'
+
+    def to_dict(self):
+        """Convert all necessary related objects into a dict for clients
+        """
+        return {
+            'organisation': self.contractor.account.billing_org.name,
+            'openstack_id': self.openstack_id,
+            'tenant': self.tenant,
+            'email': self.contractor.email
+        }

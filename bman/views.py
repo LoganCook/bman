@@ -13,8 +13,9 @@ from django.http import (
     JsonResponse, HttpResponseNotAllowed, Http404
 )
 
+import django.db
 from django.core import serializers
-from django.db.models.query import QuerySet
+from django.forms.models import model_to_dict
 
 from .forms import *
 
@@ -125,7 +126,8 @@ def object_should_be_saved(obj):
 # This view is mainly used for RESTful clients, JS like, to call upon
 # Might worth to check if HttpRequest.is_ajax()
 # This view can deal with single or multiple in theory
-# RESTful url design pattern: http://blog.mwaysolutions.com/2014/06/05/10-best-practices-for-better-restful-api/
+# RESTful url design pattern:
+# http://blog.mwaysolutions.com/2014/06/05/10-best-practices-for-better-restful-api/
 # Need to be able to handle token for security by extending dispatch.
 class ApiObjectsView(SkeletonView):
     def get(self, request, *args, **kwargs):
@@ -141,18 +143,20 @@ class ApiObjectsView(SkeletonView):
             if 'id' in self.kwargs:
                 # Get instance of that model
                 query_target = self.get_object()
+                # remove consumed args which is not needed in methods
+                del self.kwargs['id']
             else:
                 # Get model class
                 query_target = self.form_class.Meta.model
             if 'method' in self.kwargs:
                 method = self.kwargs.pop('method')
-                # remove consumed args which is not needed in methods
-                del self.kwargs['id']
                 method_data = getattr(query_target, method)(**self.kwargs)
-                if isinstance(method_data, QuerySet):
+                if isinstance(method_data, django.db.models.query.QuerySet):
                     data = serializers.serialize('json', method_data)
                 else:
-                    data = json.dumps(method_data)
+                    data = json.dumps(self._prepare(method_data))
+            else:
+                data = json.dumps(self._prepare(query_target))
         else:
             # all objects of a model class
             data = serializers.serialize('json', self.get_queryset())
@@ -206,3 +210,18 @@ class ApiObjectsView(SkeletonView):
             return JsonResponse({'result': 'put result is coming'})
         else:
             return JsonResponse({'message': 'Missing id'}, status=400)
+
+    def _prepare(self, data):
+        """Prepare data to be jsonfied"""
+        if isinstance(data, list) and len(data):
+            if hasattr(data[0], 'to_dict'):
+                return [i.to_dict() for i in data]
+            else:
+                return [model_to_dict(i) for i in data]
+        elif isinstance(data, django.db.models.Model):
+            if hasattr(data, 'to_dict'):
+                return data.to_dict()
+            else:
+                return model_to_dict(data)
+
+        return data
