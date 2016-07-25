@@ -1,8 +1,7 @@
 from django.db import models
-from django.contrib.contenttypes.fields import GenericForeignKey
-from django.contrib.contenttypes.models import ContentType
 
-from .person import Role
+from .person import Role, Account
+
 
 class Catalog(models.Model):
     """For AccessServices and other simple services"""
@@ -17,17 +16,19 @@ class Catalog(models.Model):
         return self.name
 
 
-#~ class Service(models.Model):
-    #~ name = models.CharField(max_length=100)
-    #~ service_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
-    #~ service_id = models.PositiveIntegerField()
-    #~ content_object = GenericForeignKey('service_type', 'service_id')
-    #~ contractor = models.ForeignKey(Role)
-    #~ start_date = models.DateField(blank=True, null=True)
-    #~ end_date = models.DateField(blank=True, null=True)
-#~
-    #~ def __str__(self):
-        #~ return "%s (%s) managed by %s" % (self.name, self.catalog, self.contractor)
+# from django.contrib.contenttypes.fields import GenericForeignKey
+# from django.contrib.contenttypes.models import ContentType
+# class Service(models.Model):
+    # name = models.CharField(max_length=100)
+    # service_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
+    # service_id = models.PositiveIntegerField()
+    # content_object = GenericForeignKey('service_type', 'service_id')
+    # contractor = models.ForeignKey(Role)
+    # start_date = models.DateField(blank=True, null=True)
+    # end_date = models.DateField(blank=True, null=True)
+#
+    # def __str__(self):
+        # return "%s (%s) managed by %s" % (self.name, self.catalog, self.contractor)
 
 class BasicService(models.Model):
     STATUS = (
@@ -35,8 +36,8 @@ class BasicService(models.Model):
         ('S', 'suspended'),
         ('D', 'ended'),
     )
-    #Might be a one-to-one, at least spreadsheet only allows one
-    contractor = models.ForeignKey(Role)
+    # Might be a one-to-one, at least spreadsheet only allows one
+    contractor = models.ForeignKey(Role)  # Manager of a service
     start_date = models.DateField(blank=True, null=True)
     end_date = models.DateField(blank=True, null=True)
     status = models.CharField(help_text='Service status', max_length=1, choices=STATUS, default='E')
@@ -46,13 +47,33 @@ class BasicService(models.Model):
 
     @property
     def descriptive_name(self):
-        #May change to another property: summary, or long_name, verbose_name. Cannot use name
+        # May change to another property: summary, or long_name, verbose_name. Cannot use name
         raise NotImplementedError()
 
     @property
     def service_url_name(self):
         """Used for building reverse url under /object/ when it is not the main object"""
         return self.__class__.__name__
+
+    @property
+    def billing_organisation(self):
+        # role and account has one-to-one relationship
+        try:
+            return self.contractor.account.billing_org
+        except Account.DoesNotExist:
+            return self.contractor.organisation
+
+    def to_dict(self):
+        """Convert all necessary related objects into a dict for clients
+        """
+        billing_org = self.billing_organisation
+        return {
+            'organisation': billing_org.name,
+            'contractor_id': self.contractor.id,
+            'contractor': self.contractor.person.full_name,
+            'email': self.contractor.email
+        }
+
 
 class AccessService(BasicService):
     """Services only need a name"""
@@ -77,6 +98,7 @@ class RDS(BasicService):
     def descriptive_name(self):
         return 'RDS'
 
+
 class Nectar(BasicService):
     """Provide tracking to Nectar projects
     One project for billing purpose only allow to have one contractor.
@@ -95,9 +117,8 @@ class Nectar(BasicService):
     def to_dict(self):
         """Convert all necessary related objects into a dict for clients
         """
-        return {
-            'organisation': self.contractor.account.billing_org.name,
-            'openstack_id': self.openstack_id,
-            'tenant': self.tenant,
-            'email': self.contractor.email
-        }
+        base_info = super().to_dict()
+        base_info.update(
+            openstack_id=self.openstack_id,
+            tenant=self.tenant)
+        return base_info

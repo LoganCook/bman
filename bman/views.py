@@ -9,17 +9,18 @@ from django.views.generic.edit import CreateView, UpdateView
 from django.shortcuts import render
 from django.core.urlresolvers import reverse
 from django.http import (
-    QueryDict, HttpResponse, HttpResponseBadRequest,
-    JsonResponse, HttpResponseNotAllowed, Http404
+    HttpResponse, HttpResponseBadRequest,
+    JsonResponse, Http404
 )
 
 import django.db
 from django.core import serializers
 from django.forms.models import model_to_dict
 
-from .forms import *
+from .forms import * # NOQA
 
 FORM_MODULE_NAME = __name__.split('.')[0] + '.forms'
+
 
 def get_classes(module_name):
     """Get a list of classes in a module"""
@@ -30,17 +31,20 @@ def get_classes(module_name):
             classes.append(name)
     return classes
 
+
 # Utility functions to convert to and from XXXForm class names to Model names
 def _form_to_model(fullname):
-    return fullname.lower().replace('form','').capitalize()
+    return fullname.lower().replace('form', '').capitalize()
+
 
 def _nomalise_form_name(target):
     return target.capitalize() + 'Form'
 
+
 def index(request):
     # Use form classes to define a list of what can be seen
     things = [_form_to_model(thing) for thing in get_classes(FORM_MODULE_NAME)]
-    return render(request, "startup.html", context={'title':'Welcome', 'things': things})
+    return render(request, "startup.html", context={'title': 'Welcome', 'things': things})
 
 
 # This is for very generic views for quick development
@@ -49,7 +53,7 @@ class SkeletonView(View):
     """
 
     # Except dispatch, other functions in Django are defined in ContextMixin
-    allowed_classess = get_classes(FORM_MODULE_NAME) #Only models have form can be interacted with
+    allowed_classess = get_classes(FORM_MODULE_NAME)  # Only models have form can be interacted with
     form_class = None
 
     def dispatch(self, request, *args, **kwargs):
@@ -57,7 +61,7 @@ class SkeletonView(View):
         # Key with multiple values will have only one left: q = QueryDict('a=1&a=3&a=5') -> {'a': '5'}
         self.kwargs.update(request.GET.dict())
         to_be_loaded = _nomalise_form_name(self.kwargs.pop('target'))
-        print("Dispatch method called from %s for : " % self.__class__.__name__, to_be_loaded)
+        print("Dispatch method called from %s for : %s" % (self.__class__.__name__, to_be_loaded))
         if to_be_loaded in self.allowed_classess:
             self.form_class = getattr(sys.modules[FORM_MODULE_NAME], to_be_loaded)
             return super(SkeletonView, self).dispatch(request, *args, **kwargs)
@@ -76,7 +80,7 @@ class SkeletonView(View):
         instance = None
         obj_id = self.kwargs.get('id', None)
         if obj_id is None:
-            #Never should be here
+            # Never should be here
             raise RuntimeError("No id, check code and url config")
 
         model = self.form_class.Meta.model
@@ -117,11 +121,13 @@ class ObjectList(SkeletonView, ListView):
     """View class for reading object or objects"""
     template_name = 'generic_list.html'
 
-#Valid data, how to reuse form class' validator?
+
+# Valid data, how to reuse form class' validator?
 def object_should_be_saved(obj):
     print("In validator which is called object_should_be_saved for now")
     print(obj.object)
     return True
+
 
 # This view is mainly used for RESTful clients, JS like, to call upon
 # Might worth to check if HttpRequest.is_ajax()
@@ -139,11 +145,11 @@ class ApiObjectsView(SkeletonView):
         # are in self.kwargs
         data = json.dumps({})
 
-        if len(self.kwargs) >= 1: #more than just :id, could have args for class methods.
+        if len(self.kwargs) >= 1:  # more than just :id, could have args for class methods.
             if 'id' in self.kwargs:
                 # Get instance of that model
                 query_target = self.get_object()
-                # remove consumed args which is not needed in methods
+                # Remove consumed args which is not needed in methods
                 del self.kwargs['id']
             else:
                 # Get model class
@@ -152,38 +158,42 @@ class ApiObjectsView(SkeletonView):
                 method = self.kwargs.pop('method')
                 method_data = getattr(query_target, method)(**self.kwargs)
                 if isinstance(method_data, django.db.models.query.QuerySet):
-                    data = serializers.serialize('json', method_data)
+                    data = self._repack(serializers.serialize('json', method_data))
                 else:
-                    data = json.dumps(self._prepare(method_data))
+                    data = self._prepare(method_data)
+            elif self.kwargs:
+                # WHERE all conditions
+                data = self._prepare(query_target.objects.filter(**self.kwargs))
             else:
-                data = json.dumps(self._prepare(query_target))
+                # Just a single model instance
+                data = self._prepare(query_target)
         else:
             # all objects of a model class
-            data = serializers.serialize('json', self.get_queryset())
+            data = self._repack(serializers.serialize('json', self.get_queryset()))
 
         # reporting front end is running on other server not from this one.
         # Has to allow CROS until other solution comes up
-        #return HttpResponse(data,  content_type="application/json")
-        response = HttpResponse(data,  content_type="application/json")
+        # return HttpResponse(data,  content_type="application/json")
+        response = HttpResponse(data, content_type="application/json")
         # Origin can be limited once I know the origin
         response["Access-Control-Allow-Origin"] = "*"
         # Other options are not used but kept here for record
-        #~ response["Access-Control-Allow-Methods"] = "GET, OPTIONS"
-        #~ response["Access-Control-Max-Age"] = "1000"
-        #~ response["Access-Control-Allow-Headers"] = "*"
+        # response["Access-Control-Allow-Methods"] = "GET, OPTIONS"
+        # response["Access-Control-Max-Age"] = "1000"
+        # response["Access-Control-Allow-Headers"] = "*"
         return response
 
-    #For creation
+    # For object creation
     def post(self, request, *args, **kwargs):
         if 'id' in self.kwargs:
             return JsonResponse({'message': 'id cannot be used with POST method'}, status=405)
 
         print(request.META['CONTENT_TYPE'])
-        #curl localhost:8000/objects/person/1/ -X PosT --data @test.json -H "Content-Type: application/json"
-        #1. form: application/x-www-form-urlencoded, use QueryDict to get elements in a from
-        #self.form_class then use form validation and other methods
-        #2. json raw -H "Content-Type: application/json" if only json is to be used
-        #pure json
+        # curl localhost:8000/objects/person/1/ -X PosT --data @test.json -H "Content-Type: application/json"
+        # 1. form: application/x-www-form-urlencoded, use QueryDict to get elements in a from
+        #    self.form_class then use form validation and other methods
+        # 2. json raw -H "Content-Type: application/json" if only json is to be used
+        #    pure json
         try:
             data = json.loads(request.body.decode("utf-8"))
             print(data)
@@ -205,7 +215,7 @@ class ApiObjectsView(SkeletonView):
 
     def put(self, request, *args, **kwargs):
         if 'id' in self.kwargs:
-            #print(QueryDict(request.body))
+            # print(QueryDict(request.body))
             print(json.loads(request.body.decode("utf-8")))
             return JsonResponse({'result': 'put result is coming'})
         else:
@@ -213,15 +223,40 @@ class ApiObjectsView(SkeletonView):
 
     def _prepare(self, data):
         """Prepare data to be jsonfied"""
-        if isinstance(data, list) and len(data):
-            if hasattr(data[0], 'to_dict'):
-                return [i.to_dict() for i in data]
-            else:
-                return [model_to_dict(i) for i in data]
-        elif isinstance(data, django.db.models.Model):
+        def _generator(data):
             if hasattr(data, 'to_dict'):
-                return data.to_dict()
+                converted = data.to_dict()
             else:
-                return model_to_dict(data)
+                converted = model_to_dict(data)
+            return converted
 
-        return data
+        converted = {}
+        if isinstance(data, list):
+            converted = [_generator(d) for d in data]
+        elif isinstance(data, django.db.models.Model):
+            converted = _generator(data)
+        elif isinstance(data, django.db.models.QuerySet):
+            converted = [_generator(d) for d in data]
+
+        if converted == {}:
+            raise TypeError("Unkonwn type met: %s" % type(data))
+        return json.dumps(converted)
+
+    def _repack(self, j_string):
+        """Repack a result of serializers.serialize json string
+        by removing model field, move pk and all fields in fields into
+        a dict and return the result of json.dumps.
+        """
+        serialized = json.loads(j_string)
+        if len(serialized) == 0:
+            return json.dumps([])
+
+        assert 'pk' in serialized[0] and 'model' in serialized[0], \
+            'Not a serialized model'
+
+        size = len(serialized)
+        data = [None] * size
+        for i in range(size):
+            data[i] = serialized[i]['fields']
+            data[i]['pk'] = serialized[i]['pk']
+        return json.dumps(data)
