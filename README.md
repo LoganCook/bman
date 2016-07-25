@@ -63,6 +63,7 @@ env/bin/gunicorn demo.wsgi
     python manage.py loaddata --app bman catalog relationshiptype
     # If there is initial data
     python manage.py loadcsv /somepath/init_data.csv
+    python manage.py ingest /somepath/some_ingestable_data.csv
     ```
 
 ##Start to listen to the socket
