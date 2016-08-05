@@ -6,15 +6,13 @@ It contains:
 0. [settings example](demo/settings.py.demo)
 
   This provides a template for an actual setting.py. At least, it needs database settings and SECRET_KEY.
-0. [Models](bman/README.md)
-
-It will contain:
-
-0. API for others to call.
+0. Two sets of models
+0. APIs for others to call.
+0. A few simple pages for quick check.
 
 ##Deployment for testing
 
-It needs to set up web server, wsgi server and database.
+It needs to set up a web server, a wsgi server and a database.
 
 ###Web server
 The package can be served by, for example, __nginx__ (proxy) + __gunicorn__.
@@ -23,18 +21,22 @@ If deploy on a CentOS 7 cloud instance, [script](centos7.sh) can be used to set 
 _Note_: this script does not do everything to get the application up running as database connection
 information is not handled by it. This is better done after boot (manual work).
 
-After creating `demo/setting.py` with the correct information (see below __Prepare database__), assume package has been copied in `/usr/lib/django_bman/pacakge` in
-a virtual environment in `/usr/lib/django_bman/env`, then the application can be served by running these commands:
+Assuming configuration files are in `runner` directory. After creating
+`runner/bman.py` with the correct information (see below __Prepare
+database__), assume package has been copied in
+`/usr/lib/django_bman/pacakge` in a virtual environment in
+`/usr/lib/django_bman/env`, then the application can be served by
+running these commands:
 
 ```shell
 PDIR=/usr/lib/django_bman
 cd $PDIR/package
 source env/bin/acative
-env/bin/gunicorn demo.wsgi
+env/bin/gunicorn runner.usage_wsgi
 ```
 
 ###Prepare database
-0. Create user and database:
+0. Create user and database if use databases other than sqlite:
     ```sql
     --Run from a sql file or in database
     CREATE USER bman WITH ENCRYPTED PASSWORD "SOMEPASSWD";
@@ -42,7 +44,7 @@ env/bin/gunicorn demo.wsgi
     ```
 
     ```python
-    #Put database information into /usr/lib/django_bman/package/demo/settings.py
+    # Put database information into /usr/lib/django_bman/package/runner/bman.py
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.postgresql_psycopg2',
@@ -54,6 +56,7 @@ env/bin/gunicorn demo.wsgi
     }
     ```
 
+0. Create tables and load data:
     ```shell
 
     sudo su
@@ -65,6 +68,11 @@ env/bin/gunicorn demo.wsgi
     python manage.py loadcsv /somepath/init_data.csv
     python manage.py ingest /somepath/some_ingestable_data.csv
     ```
+   When multiple settings exist in `runner` pacakge, run commands with `--settings`:
+
+   `python manage.py command --settings=runner.bman`
+
+   `settings` should be one of none-wsgi py file.
 
 ##Start to listen to the socket
 ```shell

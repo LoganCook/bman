@@ -1,0 +1,34 @@
+{% extends "ersa_base.html" %}
+
+<!--
+below strange line is a temporary hack to use local title
+-->
+{% block content_title %}{% endblock %}
+
+{% load humanize %}
+{% block content %}
+<h1>HPC usage</h1>
+{% if object_list %}
+<table class="table table-striped">
+    <tr>
+        <th>Classifier (various level id)</th>
+        <th>Username</th>
+        <th>Job Count</th>
+        <th>Total Core Seconds</th>
+        <th>Total Core Used</th>
+    </tr>
+{% for item in object_list %}
+    <tr>
+        <td>{{ item.class_one_id }}{{ item.class_two_id }}{{ item.class_three_id }}</td>
+        <td>{{ item.owner }}</td>
+        <td>{{ item.job_count }}</td>
+        <td>{{ item.cpu_seconds|intword }}</td>
+        <td>{{ item.cores }}</td>
+    </tr>
+{% endfor %}
+</table>
+{% else %}
+<p>No object yet.</p>
+{% endif %}
+
+{% endblock %}

@@ -1,0 +1,83 @@
+{% extends "ersa_base.html" %}
+
+{% block title %}{{ title }}{% endblock %}
+{% block content_title %}<h1>{{ title }}</h1>{% endblock %}
+{% block content %}
+
+<h2>You can view the usages listed here</h2>
+<div ng-app="usageApp" class="well">
+  <div ng-controller="main">
+    <div class="row">
+    <date-pickers pickers="pickers" set-spy="setDPSpy(spy)"></date-pickers>
+    </div>
+    <cas-dropdowns set-spy="setSpy(spy)" level-data="levelData"></cas-dropdowns>
+
+    <div class="form-group">
+        <label for="services">Services</label>
+        <select id="services" ng-options="item for item in ::things" ng-model="service"></select>
+    </div>
+
+    <button type="button" class="btn btn-default" ng-click="submit()">Go</button>
+  </div>
+</div>
+
+<h2>Or view all conent of:</h2>
+<div class="well">
+<ul>
+{% for thing in things %}
+  <li><a href="{% url 'objects' thing %}">{{ thing }}</a></li>
+{% endfor %}
+</ul>
+</div>
+
+<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.5.8/angular.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/angular-ui-bootstrap/2.0.2/ui-bootstrap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/angular-ui-bootstrap/2.0.2/ui-bootstrap-tpls.min.js"></script>
+{% load staticfiles %}
+<script src="{% static 'usage/mere-ui.js' %}"></script>
+<script src="{% static 'usage/components/datepickers.js' %}"></script>
+<script src="{% static 'usage/components/casdropdowns.js' %}"></script>
+
+<script type="text/javascript">
+  angular.module('usageApp', ['mereUI']).controller('main', ['$scope', function($scope) {
+    $scope.pickers = [{
+        title: 'start',
+        class: 'col-md-3',
+        date: new Date('2016-05-01'),
+        minDate: new Date(2016, 4, 1)
+      }, {
+        title: 'end',
+        class: 'col-md-3',
+        date: new Date()
+    }];
+    var dpSpy; // function alias of the spy inside the datePickers
+    $scope.setDPSpy = function(spy) {
+      dpSpy = spy;
+    };
+
+    $scope.levelData = [{{ level1|safe }}, {{ level2|safe }}, {{ level3|safe }}];
+    $scope.things = {{ things|safe }};
+    var casSpy;  // function alias of the spy inside the casDropdowns
+    $scope.setSpy = function(spy) {
+      casSpy = spy;
+    };
+    $scope.submit = function() {
+      if ($scope.service == undefined) {
+        alert("You have not chosen which service to view.");
+        return false;
+      }
+      var dates = dpSpy(), selected = casSpy(), classifiers = [];
+      var qs = 'start=' + dates[0] + '&end=' + dates[1];
+      if (selected.length > 0) {
+        for (var i = 0; i < selected.length; i++) {
+          classifiers.push('classifiers=' + encodeURIComponent(selected[i]));
+        }
+        qs += '&' + classifiers.join('&');
+      }
+      window.location = 'objects/' + $scope.service + '/summarise/?' + qs;
+    };
+  }]);
+</script>
+
+{% endblock %}
+

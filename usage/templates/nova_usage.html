@@ -1,0 +1,34 @@
+{% extends "ersa_base.html" %}
+
+<!--
+below strange line is a temporary hack to use local title
+-->
+{% block content_title %}{% endblock %}
+
+{% load humanize %}
+{% block content %}
+<h1>Nova usage</h1>
+{% if object_list %}
+<table class="table table-striped">
+    <tr>
+        <th>Classifier (various level id)</th>
+        <th>Span (seconds)</th>
+        <th>Server</th>
+        <th>Flavor</th>
+        <th>Tenant</th>
+    </tr>
+{% for item in object_list %}
+    <tr>
+        <td>{{ item.class_one_id }}{{ item.class_two_id }}{{ item.class_three_id }}</td>
+        <td>{{ item.span|intcomma }}</td>
+        <td>{{ item.server }}</td>
+        <td>{{ item.flavor }}</td>
+        <td>{{ item.tenant }}</td>
+    </tr>
+{% endfor %}
+</table>
+{% else %}
+<p>No object yet.</p>
+{% endif %}
+
+{% endblock %}

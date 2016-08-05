@@ -48,7 +48,7 @@ User=nginx
 Group=nginx
 WorkingDirectory=$PDIR/package
 Environment=PATH=$PDIR/env/bin
-ExecStart=$PDIR/env/bin/gunicorn --error-logfile /var/log/gunicorn/error.log --log-level info demo.wsgi
+ExecStart=$PDIR/env/bin/gunicorn --error-logfile /var/log/gunicorn/error.log --log-level info runner.bman
 ExecReload=/bin/kill -s HUP \$MAINPID
 ExecStop=/bin/kill -s TERM \$MAINPID
 RuntimeDirectory=gunicorn

@@ -1,0 +1,17 @@
+{% extends "ersa_base.html" %}
+
+{% block title %}{{ title }}{% endblock %}
+{% block content %}
+
+<h2>Objects</h2>
+{% if object_list %}
+<ol>
+{% for object in object_list %}
+    <li>{{ object }}</li>
+{% endfor %}
+</ol>
+{% else %}
+<p>No object yet.</p>
+{% endif %}
+
+{% endblock %}
