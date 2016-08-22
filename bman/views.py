@@ -226,8 +226,10 @@ class ApiObjectsView(SkeletonView):
         def _generator(data):
             if hasattr(data, 'to_dict'):
                 converted = data.to_dict()
-            else:
+            elif isinstance(data, django.db.models.Model):
                 converted = model_to_dict(data)
+            else:
+                converted = data
             return converted
 
         converted = {}
@@ -237,10 +239,17 @@ class ApiObjectsView(SkeletonView):
             converted = _generator(data)
         elif isinstance(data, django.db.models.QuerySet):
             converted = [_generator(d) for d in data]
+        else:
+            # might be a base type
+            converted = data
 
-        if converted == {}:
-            raise TypeError("Unkonwn type met: %s" % type(data))
-        return json.dumps(converted)
+        try:
+            rslt = json.dumps(converted)
+        except Exception as e:
+            rslt = json.dumps('')
+            print("Failed to dump data to JSON. More:")
+            print(e)
+        return rslt
 
     def _repack(self, j_string):
         """Repack a result of serializers.serialize json string

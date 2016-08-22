@@ -123,7 +123,12 @@ class JSONView(SkeletonView):
             qr = self.get_object()
         else:
             qr = self.get_queryset()
-        data = jsonfy(qr)
+
+        try:
+            data = jsonfy(qr)
+        except Exception as err:
+            data = '""'
+            print("Failed to jsonfy: ", str(err))
 
         # Clients are likely running on other servers, so we
         # have to allow CROS access otherwise retrun directly

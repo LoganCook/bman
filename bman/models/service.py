@@ -68,6 +68,7 @@ class BasicService(models.Model):
         """
         billing_org = self.billing_organisation
         return {
+            'organisation_id': billing_org.id,
             'organisation': billing_org.name,
             'contractor_id': self.contractor.id,
             'contractor': self.contractor.person.full_name,

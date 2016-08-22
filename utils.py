@@ -29,25 +29,32 @@ def _generator(data):
     # complex data with extend linked data, not just ids
     if hasattr(data, 'to_dict'):
         converted = data.to_dict()
-    elif isinstance(data, dict):
-        converted = data
-    else:
+    elif isinstance(data, django.db.models.Model):
         converted = model_to_dict(data)
+    else:
+        converted = data
     return converted
 
 
 def jsonfy(data):
     """Converts data to be sent in JSON"""
+
+    # query can retrun
+    # 1. a model instance
+    # 2. QuerySet, which is an iterator of model instances
+    # 3. ValueQuerySet, which is an iterator of dicts
+    # 4. list of things, likely some Python types
     converted = {}
-    if isinstance(data, django.db.models.Model):
-        converted = _generator(data)
-    elif isinstance(data, list):
-        converted = [_generator(d) for d in data]
-    elif isinstance(data, django.db.models.query.ValuesQuerySet):
+    if isinstance(data, django.db.models.query.ValuesQuerySet):
         converted = list(data)
     elif isinstance(data, django.db.models.QuerySet):
         converted = [_generator(d) for d in data]
-
-    if converted == {}:
-        raise TypeError("Unkonwn type met: %s" % type(data))
+    elif isinstance(data, django.db.models.Model):
+        converted = _generator(data)
+    elif isinstance(data, list):
+        converted = [_generator(d) for d in data]
+    else:
+        # might be a base Python type
+        converted = data
+    # it may still fail, let the call to deal with exceptions
     return json.dumps(converted)
