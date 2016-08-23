@@ -209,7 +209,9 @@ def _csv_to_organisations(csv_row_dict):
     for col in ORGANISATION_COLS:
         if csv_row_dict[col].strip():
             org, _ = Organisation.objects.get_or_create(name=csv_row_dict[col])
-            orgs.append(org)
+            # These are in hierachical relationship, so, they cannot appear twice
+            if org not in orgs:
+                orgs.append(org)
     _apply_organisation_relationship(orgs)
     if len(orgs) == 0:
         raise FieldDoesNotExist("No organisation found in all accepted formats")

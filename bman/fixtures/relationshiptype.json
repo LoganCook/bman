@@ -7,7 +7,8 @@
       "entity_tail": "organisation",
       "description": "For structure of organisations. e.g. University and its faculties, schools",
       "forward": "is the parent organisation of",
-      "backward": "is a sub-organisation of"
+      "backward": "is a sub-organisation of",
+      "tconstraint": true
     }
   },
   {
