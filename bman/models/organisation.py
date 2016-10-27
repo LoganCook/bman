@@ -172,7 +172,7 @@ class Organisation(models.Model):
         services = []
         for account in accounts:
             result = account.role.get_service(name=name)
-            if result:
+            if result and len(result):
                 services.append(result)
         return services
 
@@ -181,12 +181,13 @@ class Organisation(models.Model):
         from .person import Account
         return Account.objects.all().filter(billing_org__pk=self.pk)
 
-    def get_extented_accounts(self):
+    def get_extended_accounts(self):
         """Similar to get_all_accounts but for reporting-frontend as a temporary solution"""
         accounts = self.get_all_accounts()
         extended = {}
         for account in accounts:
             extended[account.username] = dict(
+               role_id= account.role.id,
                fullname=account.role.person.full_name,
                organisation=account.role.organisation.name,
                email=account.role.email)
@@ -194,7 +195,7 @@ class Organisation(models.Model):
 
     def get_all_roles(self):
         """Get all roles under this organisation"""
-        roles = [self.role_set.all()]
+        roles = list(self.role_set.all())
         ids = flat_ids(self.get_child_ids(), [])
         for child_id in ids:
             roles.extend(Organisation.objects.get(pk=child_id).role_set.all())

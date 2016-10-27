@@ -48,7 +48,7 @@ User=nginx
 Group=nginx
 WorkingDirectory=$PDIR/package
 Environment=PATH=$PDIR/env/bin
-ExecStart=$PDIR/env/bin/gunicorn --error-logfile /var/log/gunicorn/error.log --log-level info runner.bman
+ExecStart=$PDIR/env/bin/gunicorn --error-logfile /var/log/gunicorn/bman_error.log --log-level info runner.bman
 ExecReload=/bin/kill -s HUP \$MAINPID
 ExecStop=/bin/kill -s TERM \$MAINPID
 RuntimeDirectory=gunicorn
@@ -89,7 +89,6 @@ nginx_location=bman
 cat > /etc/nginx/default.d/bman.conf <<EOF
 location /$nginx_location {
     proxy_http_version 1.1;
-    proxy_redirect off;
     proxy_set_header SCRIPT_NAME /$nginx_location;
     proxy_pass http://localhost:8000;
 }

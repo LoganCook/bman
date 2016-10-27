@@ -228,6 +228,8 @@ class ApiObjectsView(SkeletonView):
                 converted = data.to_dict()
             elif isinstance(data, django.db.models.Model):
                 converted = model_to_dict(data)
+            elif isinstance(data, list) or isinstance(data, django.db.models.QuerySet):
+                converted = [_generator(d) for d in data]
             else:
                 converted = data
             return converted
@@ -246,8 +248,9 @@ class ApiObjectsView(SkeletonView):
         try:
             rslt = json.dumps(converted)
         except Exception as e:
-            rslt = json.dumps('')
-            print("Failed to dump data to JSON. More:")
+            msg = 'Failed to dump data to JSON.'
+            rslt = json.dumps(msg)
+            print(msg + " More:")
             print(e)
         return rslt
 

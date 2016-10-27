@@ -4,7 +4,7 @@ from django.core import validators
 
 from .organisation import Organisation
 from .relationship import RelationshipType, Relationship
-from .utils import get_related
+
 
 class Person(models.Model):
     TITLE = (('Dr', 'Dr'), ('APro', 'Associate Professor'), ('Prof', 'Professor'),
@@ -59,7 +59,7 @@ class Person(models.Model):
 class Role(models.Model):
     person = models.ForeignKey(Person)
     organisation = models.ForeignKey(Organisation)
-    relationshiptype = models.ForeignKey(RelationshipType) #Must be one of Organisation-Person type
+    relationshiptype = models.ForeignKey(RelationshipType)  # Must be one of Organisation-Person type
     description = models.TextField(blank=True, default='')
     start_date = models.DateField(blank=True, null=True)
     end_date = models.DateField(blank=True, null=True)
@@ -74,6 +74,22 @@ class Role(models.Model):
         """Role description read from Orgainsation to Person"""
         return "%s %s %s" % (self.organisation, self.relationshiptype.forward, self.person)
 
+    def to_dict(self):
+        """Convert all necessary related objects into a dict for clients
+        """
+        return {
+            'id': self.id,
+            'description': self.description,
+            'start_date': self.start_date,
+            'end_date': self.end_date,
+            'organisation_id': self.organisation.id,
+            'organisation': self.organisation.name,
+            'full_name': self.person.full_name,
+            'email': self.email,
+            'mobile': self.mobile,
+            'phone': self.phone
+        }
+
     @property
     def backward(self):
         """Role description read from Person to Orgainsation"""
@@ -82,7 +98,7 @@ class Role(models.Model):
     def get_all_services(self):
         """All services this role linked to"""
         services = []
-        #better to auto-discover services from which to query
+        # better to auto-discover services from which to query
         services.extend(self.accessservice_set.all())
         services.extend(self.rds_set.all())
         services.extend(self.nectar_set.all())
@@ -98,26 +114,26 @@ class Role(models.Model):
 
         service = name.lower() + '_set'
         if hasattr(self, service):
-            return getattr(self, service).first()
+            return getattr(self, service).all()
         else:
             return None
 
     def get_students(self):
-        #Only empolyee can be a supervisor
+        # Only empolyee can be a supervisor
         students = []
         if self.relationshiptype.name == 'Employment':
             sup_type = RelationshipType.objects.get(name='Supervision')
             student_rels = Relationship.objects.filter(relationshiptype=sup_type, tail_id=self.pk)
-            students = [ Role.objects.get(pk=rel.head_id).person for rel in student_rels ]
+            students = [Role.objects.get(pk=rel.head_id).person for rel in student_rels]
         return students
 
     def get_supervisors(self):
-        #Only student can have supervisors
+        # Only student can have supervisors
         supervisors = []
         if self.relationshiptype.name == 'Study':
             sup_type = RelationshipType.objects.get(name='Supervision')
             supervisor_rels = Relationship.objects.filter(relationshiptype=sup_type, head_id=self.pk)
-            supervisors = [ Role.objects.get(pk=rel.tail_id).person for rel in supervisor_rels ]
+            supervisors = [Role.objects.get(pk=rel.tail_id).person for rel in supervisor_rels]
         return supervisors
 
 
@@ -131,7 +147,8 @@ class Account(models.Model):
         ('T', 'terminated'),
     )
     role = models.OneToOneField(Role)
-    username = models.CharField(max_length=30,
+    username = models.CharField(
+        max_length=30,
         help_text='Required. 30 characters or fewer. Letters, digits and . _ only.',
         validators=[
             validators.RegexValidator(r'^[\w.]+$',
@@ -139,7 +156,7 @@ class Account(models.Model):
                                       'invalid'),
         ])
     status = models.CharField(max_length=1, choices=STATUS, default='A')
-    #for certain service? catalog = models.ForeignKey(Catalog)
+    # for certain service? catalog = models.ForeignKey(Catalog)
     billing_org = models.ForeignKey(Organisation, blank=True, null=True)
 
     def __str__(self):

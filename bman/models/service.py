@@ -3,6 +3,15 @@ from django.db import models
 from .person import Role, Account
 
 
+def extract_fields(source, fields):
+    """Generate dictionary with specified fields from a dictionary."""
+    output = {}
+    for name in fields:
+        if name in source:
+            output[name] = source[name]
+    return output
+
+
 class Catalog(models.Model):
     """For AccessServices and other simple services"""
     name = models.CharField(max_length=100)
@@ -68,8 +77,10 @@ class BasicService(models.Model):
         """
         billing_org = self.billing_organisation
         return {
-            'organisation_id': billing_org.id,
-            'organisation': billing_org.name,
+            'billing_id': billing_org.id,  # billing organisation id
+            'billing': billing_org.name,   # billing organisation name
+            'organisation_id': self.contractor.organisation.id,
+            'organisation': self.contractor.organisation.name,
             'contractor_id': self.contractor.id,
             'contractor': self.contractor.person.full_name,
             'email': self.contractor.email
@@ -98,6 +109,14 @@ class RDS(BasicService):
 
     def descriptive_name(self):
         return 'RDS'
+
+    def to_dict(self):
+        """Convert all necessary related objects into a dict for clients
+        """
+        base_info = super().to_dict()
+        fields = ["allocation_num", "filesystem", "approved_size", "collection_name"]
+        base_info.update(extract_fields(self.__dict__, fields))
+        return base_info
 
 
 class Nectar(BasicService):
