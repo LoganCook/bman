@@ -1,14 +1,12 @@
-import json
-import django.core
-
 import unittest
 from unittest.mock import patch
 
+import django.core
 import django.test
 from django.core.management import call_command
 from django.utils.six import StringIO
 
-from usage.management.importers import Importer, NovaUsageImporter
+from usage.management.importers import Importer
 
 TEST_DATA_FILE = 'usage/nova_1470148200_1470320999.json'
 
@@ -44,20 +42,14 @@ class ImporterTest(unittest.TestCase):
         self.assertEqual(err.getvalue(), '')
         self.assertIn('Ingestion completed successfully', out.getvalue())
 
-    def test_derived_importer(self):
-        with patch('usage.management.importers.NovaUsageImporter') as MockClass:
+    def test_importer_constructor(self):
+        with patch('usage.management.commands.ingest.Importer') as MockClass:
             call_command('ingest', TEST_DATA_FILE, type=self.test_type)
             args, _ = MockClass.call_args
+            self.assertEqual(len(args), 6)
             self.assertIsInstance(args[0], int)
             self.assertIsInstance(args[1], int)
             self.assertIsInstance(args[2], list)
-
-
-class NovaUsageImporterTest(django.test.TestCase):
-    def setUp(self):
-        with open(TEST_DATA_FILE, 'r') as jf:
-            self.data = json.load(jf)
-
-    def test_can_ingest(self):
-        importer = NovaUsageImporter(1470148200, 1470320999, self.data)
-        importer.insert()
+            self.assertIsInstance(args[3], object)
+            self.assertIsInstance(args[4], list)
+            self.assertIsInstance(args[5], str)

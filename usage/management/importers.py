@@ -6,9 +6,28 @@ logger = logging.getLogger(__name__)
 
 
 class Importer(object):
+    """A generic usage database importer class
+
+    Each instance of Importer has the database table represented by Django model
+    manager. Caller need to provide a list of fields for creating a model instance.
+    """
     CLASSIFIER_KEYS = ['one', 'two', 'three']
 
     def __init__(self, start_ts, end_ts, data, manager, fields, unique_field):
+        """
+        :param start_ts:
+            timestamp of start time of usage staticstics.
+        :param end_ts:
+            timestamp of end time of usage staticstics.
+        :param data:
+            usage data dict of usage staticstics.
+        :param manager:
+            Django model manager of the target.
+        :param fields:
+            a list of fields to be picked to generate usage model instance.
+        :param unique_field:
+            a key used to uniquely identify a usage data to avoid duplication.
+        """
         self.start_ts = start_ts
         self.end_ts = end_ts
         self.usages = data
@@ -16,19 +35,34 @@ class Importer(object):
         self.FIELDS = fields
         self.unique_field = unique_field
 
+    def insert(self):
+        count = 0
+        for usage in self.usages:
+            if self._insert(usage):
+                count += 1
+        logger.info('Ingest %d out of %d', count, len(self.usages))
+
     def _insert(self, usage):
-        """Insert usage of an usage"""
+        """Insert usage of an usage
+
+        :param usage:
+            usage data in a dict.
+        :returns:
+            if action was successful
+        :rtype:
+            bool
+        """
 
         # usage['manager'] holds manager's organisations at the most three levels
         # They have to be mapped to University, UniversityD and UniversityDD
         # initialise model_data with classifiers
         model_data = self._get_classifiers(usage['manager'])
         if len(model_data) == 0:
-            logger.warning('Skipped: usage identified by id=%s has no manager data.' % usage[self.unique_field])
+            logger.warning('Skipped: usage identified by id=%s has no manager data.', usage[self.unique_field])
             return False
 
         if self._exists(usage):
-            logger.debug('Skipped: usage identified by id=%s is in database.' % usage[self.unique_field])
+            logger.debug('Skipped: usage identified by id=%s is in database.', usage[self.unique_field])
             return False
 
         for f in self.FIELDS:
@@ -48,13 +82,6 @@ class Importer(object):
         }
         rslt = self.manager.filter(**filters)
         return len(rslt) > 0
-
-    def insert(self):
-        count = 0
-        for usage in self.usages:
-            if self._insert(usage):
-                count += 1
-        logger.info('Ingest %d out of %d' % (count, len(self.usages)))
 
     def _get_classifier_id(self, lvl, name, parent_id=None):
         """Get or create an University[,D,DD] instance id"""

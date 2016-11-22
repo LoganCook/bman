@@ -1,4 +1,3 @@
-import csv
 import os
 import logging
 
@@ -15,6 +14,7 @@ log_handler.setFormatter(logging.Formatter('%(asctime)s %(levelname)s: %(message
 logger.addHandler(log_handler)
 logger.setLevel(logging.DEBUG)
 
+
 class Command(BaseCommand):
     help = 'Ingest data from a csv file and put them into the database'
 
@@ -22,15 +22,15 @@ class Command(BaseCommand):
         parser.add_argument('file_name')
 
         parser.add_argument('-t', '--type',
-            default='nectar',
-            choices=['nectar'],
-            help='Type of ingestion')
+                            default='nectar',
+                            choices=['nectar'],
+                            help='Type of ingestion')
 
     def handle(self, *args, **options):
         if not os.path.exists(options['file_name']):
             raise CommandError('File "%s" does not exist' % options['file_name'])
 
-        logger.debug('About to load the data in "%s" into the database as %s' % (options['file_name'], options['type']))
+        logger.debug('About to load the data in "%s" into the database as %s', options['file_name'], options['type'])
 
         # This is nectar type:
         try:
@@ -53,10 +53,8 @@ class Command(BaseCommand):
                     Nectar.objects.get_or_create(contractor=mr, **tenant)
                 except ObjectDoesNotExist:
                     self.stderr.write('Role of manager identified by %s is not in the system. Create it first' % managers[0]['email'])
-                except Exception as e:
-                    logging.exception('Cannot ingest tenant: %s' % str(tenant))
-
+                except Exception as err:
+                    logging.exception('Cannot ingest tenant: %s because %s', str(tenant), err)
 
         except Exception as err:
             self.stderr.write(str(err))
-
