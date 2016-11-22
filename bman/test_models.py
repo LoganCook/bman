@@ -223,6 +223,7 @@ class ServiceTestCase(TestCase):
 
     def test_person_to_a_service(self):
         p = Person.objects.get(first_name='John', last_name='Smith')
+        print(p.get_service('AccessService'))
         self.assertIsInstance(p.get_service('AccessService')[0], AccessService)
         self.assertEqual(len(p.get_service('NotExist')), 0)
 

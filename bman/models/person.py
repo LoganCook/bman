@@ -32,22 +32,20 @@ class Person(models.Model):
     def get_all_services(self):
         """All services this Person linked to"""
         services = []
-        roles = self.role_set.all()
-        for role in roles:
+        for role in self.role_set.all():
             services.extend(role.get_all_services())
         return services
 
     def get_service(self, name=None):
-        """All services this Person linked to"""
+        """A service this Person linked to"""
         if name is None:
             return []
 
         services = []
-        roles = self.role_set.all()
-        for role in roles:
+        for role in self.role_set.all():
             result = role.get_service(name=name)
             if result:
-                services.append(result)
+                services.extend(result)
         return services
 
 
