@@ -73,9 +73,67 @@ class NectarTenantImporter(object):
         return (tenant, managers)
 
 
+class RDSImporter(object):
+    """Import RDS records from a csv file
+
+    Each row in csv file has at least:
+    User Name,Collection ID,Email,RDS Allocated (GB),RDS Filesystem
+
+    Result is in RDSImporter.services which is a list of dict of these keys:
+    email, allocation_num, approved_size, filesystem.
+    """
+
+    MAPPINGS = {
+        'Collection ID': 'allocation_num',
+        'Email': 'email',
+        'RDS Allocated (GB)': 'approved_size',
+        'RDS Filesystem': 'filesystem'
+    }
+
+    def __init__(self, fn):
+        self.services = []
+        try:
+            with open(fn, 'r') as csvfile:
+                spamreader = csv.DictReader(csvfile)
+                for row in spamreader:
+                    try:
+                        self.services.append(self.read_row(row))
+                    except ValueError as err:
+                        if str(err) != NO_DATA:
+                            raise err
+                    except Exception as err:
+                        raise RuntimeError("fail to read line %s. Error: %s" % (row, str(err)))
+        except Exception as err:
+            raise RuntimeError("Cannot process csv file %s: %s" % (fn, str(err)))
+
+    def read_row(self, row):
+        """Reads a row in dict and create dict only has necessary fields
+
+        See also bman.model.service.RDS.
+        """
+        obj = {}
+        try:
+            for k, v in self.MAPPINGS.items():
+                obj[v] = row[k].strip()
+        except KeyError as err:
+            raise ValueError(NO_DATA)
+
+        if not obj['email'] or not obj['filesystem']:
+            raise ValueError(NO_DATA)
+        try:
+            obj['approved_size'] = int(obj['approved_size'])
+        except ValueError:
+            obj['approved_size'] = 0
+
+        return obj
+
+
 if __name__ == '__main__':
     logger.addHandler(logging.StreamHandler())
     logger.setLevel(logging.DEBUG)
 
-    projects = NectarTenantImporter('../sa_unis_tenants.csv')
-    logger.debug("Read %d projects", len(projects.projects))
+    nectar = NectarTenantImporter('../sa_unis_tenants.csv')
+    logger.debug("Read %d projects", len(nectar.projects))
+
+    rds = RDSImporter('../rds_20161027.csv')
+    logger.debug("Read %d services", len(rds.services))

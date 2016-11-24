@@ -3,9 +3,15 @@
 import unittest
 from unittest.mock import patch, mock_open
 
-from bman.management.importers import NectarTenantImporter
+from bman.management.importers import NectarTenantImporter, RDSImporter
 
 TEST_DATA_FILE = 'some.csv'
+
+
+def key_is_value(tester, obj):
+    tester.assertIsInstance(obj, dict)
+    for k, v in obj.items():
+        tester.assertEqual(k, v)
 
 
 class NectarTenantTestCase(unittest.TestCase):
@@ -56,3 +62,27 @@ class NectarTenantTestCase(unittest.TestCase):
             for manager in managers:
                 self.assertEqual(len(manager), self.dummy.MANAGER_BLOCK_SIZE)
                 self._key_is_value(manager)
+
+
+class RDSTestCase(unittest.TestCase):
+    def setUp(self):
+        with patch("builtins.open", mock_open(read_data="data")) as mock_file:
+            self.dummy = RDSImporter(TEST_DATA_FILE)
+            self.assertEqual(open("path/to/open").read(), "data")
+            mock_file.assert_called_with("path/to/open")
+
+    def test_raise_runtime_error_with_invalid_file(self):
+        with self.assertRaises(Exception) as cm:
+            RDSImporter(TEST_DATA_FILE)
+        self.assertIsInstance(cm.exception, RuntimeError)
+
+    def test_read_empty_row(self):
+        with self.assertRaises(ValueError):
+            self.dummy.read_row({})
+
+    def test_read_a_service(self):
+        # allocation_id is omitted if it is not a number
+        values = self.dummy.MAPPINGS.copy()
+        service = self.dummy.read_row(values)
+        self.assertEqual(len(service), len(values))
+        key_is_value(self, service)
