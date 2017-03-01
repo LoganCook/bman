@@ -10,3 +10,5 @@ tests/.coverage
 tests/report/
 build/
 migrations/
+tags
+*.json
