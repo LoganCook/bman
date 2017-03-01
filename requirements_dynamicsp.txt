@@ -1,0 +1,9 @@
+# pip install -r requirements_edynam.txt
+# Install dependency ersaDynamics through local source or github:
+# pip install -e ersaDynamics
+# pip install https://github.com/eResearchSA/edynam/archive/master.zip
+Django>=1.8,<1.9
+gunicorn
+# Development dependencies:
+# flake8
+# pylint
