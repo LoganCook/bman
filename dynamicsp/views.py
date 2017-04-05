@@ -121,15 +121,26 @@ def get_order_roleid(category_name, role_name):
     return cr.get_roleid_of(role_name, category)
 
 
-def get_for(product_id=None, account_id=None):
+def get_for(product=None, account_id=None):
     """Get FOR codes of orders
 
+    :param str product: short name of a Product, default None
+    :param str account_id: Account's UUID, default None
     :return dict: keys are order ids (salesorderid), values are list of strings of 'code: label'
+    :raise Bad request exception when product cannot be mapped to an internal name
     """
-    if product_id and not verify_id(product_id):
-        return send_json({})
     if account_id and not verify_id(account_id):
         return send_json({})
+
+    if product:
+        try:
+            prod_name = products.get_internal_name(product)
+        except LookupError:
+            return HttpResponseBadRequest("Bad request - unknown product name")
+        else:
+            product_id = products.get_id(prod_name)
+    else:
+        product_id = None
 
     order_handler = Order()
     return send_json(order_handler.get_for_codes(product_id=product_id, account_id=account_id))
@@ -181,7 +192,7 @@ class Organisation(View):
                 handler = Account()
                 return send_json(handler.get_usernames(kwargs['id']))
             elif kwargs['method'] == 'get_for':
-                return get_for(account_id=kwargs['id'], product_id=method_args.get('productid', None))
+                return get_for(account_id=kwargs['id'], product=method_args.get('product', None))
             else:
                 return HttpResponseBadRequest("Bad request - method is not implement for Organisation")
         else:
@@ -229,13 +240,6 @@ class Access(View):
 class ANZSRCFor(View):
     def get(self, request, *args, **kwargs):
         """Get ANZSRC-FOR codes of Orders"""
-        # optional keyword argument productid, ignore any others
+        # optional keyword argument product is product short name, ignore any others
         method_args = request.GET.dict()
-        order_handler = Order()
-        if 'productid' in method_args:
-            if verify_id(method_args['productid']):
-                return get_for(product_id=method_args['productid'])
-            else:
-                return send_json([])
-        else:
-            return send_json(order_handler.get_for_codes())
+        return get_for(product=method_args.get('product', None))
