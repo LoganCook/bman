@@ -55,45 +55,60 @@ def verify_id(dynamics_id):
     return is_valid
 
 
-product_handler = Product()
-products = list_to_dict(product_handler.list_names(), 'name', ('productid', ))
-print(products)
+class ProductInfo(object):
+    def __init__(self):
+        self.product_handler = Product()
+        self.products = list_to_dict(self.product_handler.list_names(), 'name', ('productid', ))
+        self._normalise_names()
+
+    def _normalise_names(self):
+        """Create a map which holds normalised internal product names which are used in urls"""
+        self.normalised_names = {}
+        for long_name in self.products:
+            self.normalised_names[long_name.lower().replace('allocation', '').replace(' ', '')] = long_name
+
+    def get_internal_name(self, short_name):
+        if short_name not in self.normalised_names:
+            raise LookupError("Unknown product name")
+        return self.normalised_names[short_name]
+
+    def get_id(self, name):
+        # Not supposedly be used directly in view functions
+        # It should be called after get_internal_name
+        return self.products[name]['productid']
+
+    def get_product_prop_defs(self, name):
+        """Get Product properties needed for quering Orders"""
+        # name of a selected property is the name of property by removing spaces
+        selected_properties = None
+        if name == 'Nectar Allocation':
+            selected_properties = ('OpenstackID', )
+        elif name == 'RDS Allocation' or name == 'RDS Backup Allocation':
+            selected_properties = ('FileSystemName', 'GrantID')
+        return self.product_handler.get_property_definitions(name, selected_properties)
 
 
-def get_product_prop_defs(prod_name):
-    """Get nectar sales order details from Dynamics"""
-    # name of a selected property is the name of property by removing spaces
-    # product_handler = Product()
-    selected_properties = None
-    if prod_name == 'Nectar Allocation':
-        selected_properties = ('OpenstackID', )
-    elif prod_name == 'RDS Allocation' or prod_name == 'RDS Backup Allocation':
-        selected_properties = ('FileSystemName', 'GrantID')
-    return product_handler.get_property_definitions(prod_name, selected_properties)
+# Object facilitates getting product names and properties
+products = ProductInfo()
 
 
 def get_sold_product(prod_short_name, account_id=None):
     """Get nectar sales order details from Dynamics"""
-    # map external names to Dynamics internal names.
-    prods = {
-        'nectar': 'Nectar Allocation',
-        'rds': 'RDS Allocation',
-        'rdsbackup': 'RDS Backup Allocation'
-    }
-    if prod_short_name not in prods:
+    try:
+        prod_name = products.get_internal_name(prod_short_name)
+    except LookupError:
         return HttpResponseBadRequest("Bad request - unknown product name")
 
-    prod_name = prods[prod_short_name]
-    prop_defs = get_product_prop_defs(prod_name)
+    prop_defs = products.get_product_prop_defs(prod_name)
     manager_role = {'id': settings.PROJECT_ADMIN_ROLE, 'name': 'manager'}
     order_handler = Order()
     if account_id:
         if verify_id(account_id):
-            return send_json(order_handler.get_product(products[prod_name]['productid'], account_id=account_id, prod_props=prop_defs, roles=[manager_role]))
+            return send_json(order_handler.get_product(products.get_id(prod_name), account_id=account_id, prod_props=prop_defs, roles=[manager_role]))
         else:
             return send_json([])
     else:
-        return send_json(order_handler.get_product(products[prod_name]['productid'], prod_props=prop_defs, roles=[manager_role]))
+        return send_json(order_handler.get_product(products.get_id(prod_name), prod_props=prop_defs, roles=[manager_role]))
 
 
 def get_order_roleid(category_name, role_name):
