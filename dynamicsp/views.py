@@ -93,7 +93,7 @@ products = ProductInfo()
 
 
 def get_sold_product(prod_short_name, account_id=None):
-    """Get nectar sales order details from Dynamics"""
+    """Get sales order details of a product from Dynamics"""
     try:
         prod_name = products.get_internal_name(prod_short_name)
     except LookupError:
@@ -104,11 +104,11 @@ def get_sold_product(prod_short_name, account_id=None):
     order_handler = Order()
     if account_id:
         if verify_id(account_id):
-            return send_json(order_handler.get_product(products.get_id(prod_name), account_id=account_id, prod_props=prop_defs, roles=[manager_role]))
+            return order_handler.get_product(products.get_id(prod_name), account_id=account_id, prod_props=prop_defs, roles=[manager_role])
         else:
-            return send_json([])
+            return []
     else:
-        return send_json(order_handler.get_product(products.get_id(prod_name), prod_props=prop_defs, roles=[manager_role]))
+        return order_handler.get_product(products.get_id(prod_name), prod_props=prop_defs, roles=[manager_role])
 
 
 def get_order_roleid(category_name, role_name):
@@ -193,10 +193,14 @@ class Organisation(View):
                 return send_json(handler.get_usernames(kwargs['id']))
             elif kwargs['method'] == 'get_for':
                 return get_for(account_id=kwargs['id'], product=method_args.get('product', None))
+            elif kwargs['method'] == 'get_ands_report_meta':
+                return self._get_ands_report_meta(account_id=kwargs['id'])
+            elif kwargs['method'] == 'get_rds_report_meta':
+                return self._get_ands_report_meta(account_id=kwargs['id'])
             else:
                 return HttpResponseBadRequest("Bad request - method is not implement for Organisation")
         else:
-            return send_json('about an Organisation is not implemented')
+            return send_json('About an Organisation is not implemented')
 
     @staticmethod
     def _get_service(account_id, name=None):
@@ -204,30 +208,62 @@ class Organisation(View):
 
         try:
             if name:
-                return get_sold_product(name, account_id)
+                return send_json(get_sold_product(name, account_id))
             else:
                 return send_json(order_handler.get_account_products(account_id))
         except LookupError as e:
             logger.error('No record found. Details: %s', str(e))
             return send_json([])
 
+    def _get_ands_report_meta(self, account_id):
+        """Get meta data from Dynamics about RDS and RDS Backup allocations
+        for ANDS NodeConnect report"""
+
+        def get_report_product(prod_short_name, account_id):
+            """Get sales order details from Dynamics"""
+            prod_name = products.get_internal_name(prod_short_name)
+            prop_defs = products.get_product_prop_defs(prod_name)
+            roles = ({'id': settings.PROJECT_ADMIN_ROLE, 'name': 'admin'}, {'id': settings.PROJECT_LEADER_ROLE, 'name': 'leader'})
+            extra = ({'name': 'description'}, )
+            order_handler = Order()
+            return order_handler.get_product(products.get_id(prod_name), account_id=account_id, prod_props=prop_defs, roles=roles, order_extra=extra)
+
+        rds = get_report_product('rds', account_id)
+        rds.extend(get_report_product('rdsbackup', account_id))
+        return send_json(rds)
+
+    def _get_rds_report_meta(self, account_id):
+        """Get meta data from Dynamics about RDS and RDS Backup allocations
+        for RDS Storage node collection report"""
+        # It only needs order id, order title, allocated size
+        def get_report_product(prod_short_name, account_id):
+            """Get sales order details from Dynamics"""
+            prod_name = products.get_internal_name(prod_short_name)
+            prop_defs = products.get_product_prop_defs(prod_name)
+            order_handler = Order()
+            return order_handler.get_product(products.get_id(prod_name), account_id=account_id, prod_props=prop_defs)
+
+        rds = get_report_product('rds', account_id)
+        rds.extend(get_report_product('rdsbackup', account_id))
+        return send_json(rds)
+
 
 class Nectar(View):
     def get(self, request, *args, **kwargs):
         """Get nectar sales order details from Dynamics"""
-        return get_sold_product('nectar')
+        return send_json(get_sold_product('nectar'))
 
 
 class RDS(View):
     def get(self, request, *args, **kwargs):
         """Get RDS sales order details from Dynamics"""
-        return get_sold_product('rds')
+        return send_json(get_sold_product('rds'))
 
 
 class RDSBackup(View):
     def get(self, request, *args, **kwargs):
         """Get RDS Backup sales order details from Dynamics"""
-        return get_sold_product('rdsbackup')
+        return send_json(get_sold_product('rdsbackup'))
 
 
 class Access(View):
