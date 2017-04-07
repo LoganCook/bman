@@ -15,4 +15,5 @@ urlpatterns = [
     url(r'^(?i)api/rdsbackup/$', views.RDSBackup.as_view(), name='api-rds-backup'), # RDS Backup Allocation
     url(r'^(?i)api/access/$', views.Access.as_view(), name='api-access'), # eRSA account, HPC
     url(r'^(?i)api/anzsrc-for/$', views.ANZSRCFor.as_view(), name='api-anzsrc-for'), # ANZSRC-FOR codes of orders
+    url(r'^(?i)api/rdsreport/$', views.RDSReport.as_view(), name='api-rds-report'), # Order information for RDS report
 ]

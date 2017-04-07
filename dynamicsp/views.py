@@ -93,6 +93,7 @@ products = ProductInfo()
 # These are not real products at all but with different meta data
 REPORT_PRODUCTS = ('ands_report', 'rds_report')
 
+
 def get_sold_product(prod_short_name, account_id=None):
     """Get sales order details of a product from Dynamics"""
     if prod_short_name in REPORT_PRODUCTS and account_id:
@@ -118,6 +119,7 @@ def get_sold_product(prod_short_name, account_id=None):
     else:
         return order_handler.get_product(products.get_id(prod_name), prod_props=prop_defs, roles=[manager_role])
 
+
 def _get_ands_report_meta(account_id):
     """Get meta data from Dynamics about RDS and RDS Backup allocations
     for ANDS NodeConnect report"""
@@ -130,21 +132,6 @@ def _get_ands_report_meta(account_id):
         extra = ({'name': 'description'}, )
         order_handler = Order()
         return order_handler.get_product(products.get_id(prod_name), account_id=account_id, prod_props=prop_defs, roles=roles, order_extra=extra)
-
-    rds = get_report_product('rds', account_id)
-    rds.extend(get_report_product('rdsbackup', account_id))
-    return rds
-
-def _get_rds_report_meta(account_id):
-    """Get meta data from Dynamics about RDS and RDS Backup allocations
-    for RDS Storage node collection report"""
-    # It only needs order id, order title, allocated size
-    def get_report_product(prod_short_name, account_id):
-        """Get sales order details from Dynamics"""
-        prod_name = products.get_internal_name(prod_short_name)
-        prop_defs = products.get_product_prop_defs(prod_name)
-        order_handler = Order()
-        return order_handler.get_product(products.get_id(prod_name), account_id=account_id, prod_props=prop_defs)
 
     rds = get_report_product('rds', account_id)
     rds.extend(get_report_product('rdsbackup', account_id))
@@ -284,3 +271,20 @@ class ANZSRCFor(View):
         # optional keyword argument product is product short name, ignore any others
         method_args = request.GET.dict()
         return get_for(product=method_args.get('product', None))
+
+
+class RDSReport(View):
+    """Get meta data from Dynamics about RDS and RDS Backup allocations
+    for RDS Storage node collection report"""
+    # This report only needs order id, order title, allocated size
+    def get(self, request, *args, **kwargs):
+        def get_report_product(prod_short_name):
+            """Get sales order details from Dynamics"""
+            prod_name = products.get_internal_name(prod_short_name)
+            prop_defs = products.get_product_prop_defs(prod_name)
+            order_handler = Order()
+            return order_handler.get_product(products.get_id(prod_name), prod_props=prop_defs)
+
+        rds = get_report_product('rds')
+        rds.extend(get_report_product('rdsbackup'))
+        return send_json(rds)
