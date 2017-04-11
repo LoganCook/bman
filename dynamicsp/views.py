@@ -57,7 +57,6 @@ def verify_id(dynamics_id):
 
 product_handler = Product()
 products = list_to_dict(product_handler.list_names(), 'name', ('productid', ))
-print(products)
 
 
 def get_product_prop_defs(prod_name):
