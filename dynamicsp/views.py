@@ -16,9 +16,6 @@ logging.getLogger("requests").setLevel(logging.WARNING)
 
 logger = logging.getLogger(__name__)
 
-
-# login_conf = settings.BASE_DIR + '/dyncon.json'
-# saved_tokens = settings.BASE_DIR + '/saved_tokens.json'
 login_conf = settings.DYNAMICS_CONF
 saved_tokens = settings.TOKENS_JSON
 connect(login_conf, saved_tokens)
@@ -216,6 +213,9 @@ class Organisation(View):
             if kwargs['method'] == 'get_service':
                 return self._get_service(kwargs['id'], **method_args)
             elif kwargs['method'] == 'get_access':
+                # TODO: in future can be called by get_service?name=ersaaccount once eRSA Account Product has username property.
+                #       then, there is no need of get_access method. See comment in class Access.
+                logger.warn('get_access - eRSA Account come from Contact of Organisation not from Orders of eRSA Account of Organisation.')
                 handler = Account()
                 return send_json(handler.get_usernames(kwargs['id']))
             elif kwargs['method'] == 'get_for':
@@ -261,6 +261,11 @@ class RDSBackup(View):
 class Access(View):
     def get(self, request, *args, **kwargs):
         """Get eRSA accounts details from Dynamics"""
+        # TODO: currently product eRSA Account has no property, at least we need username
+        #       so even there are Orders for eRSA Account, we cannot use Order-Product-ProductProperty
+        #       relationship. Contact is enough for user has only one eRSA Account
+        # return send_json(get_sold_product('ersaaccount'))
+        logger.warn('Access - eRSA Account come from Contact not from Orders of eRSA Account.')
         contact_handler = Contact()
         return send_json(contact_handler.get_usernames())
 

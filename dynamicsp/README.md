@@ -5,9 +5,10 @@ the instance and manually prepared valid refresh and access tokens.
 The [settings file](runner/dynamicsp.py) is a template for creating actual setting files.
 When deploy, you at least need to:
 
-1. update `ALLOWED_HOSTS` if access url is other than localhost
-1. create a JSON file which contains arguments for connecting an Azure Active Directory Web app / API
-   listed below and update `INSTANCE_CONF` with its path
+1. Update `ALLOWED_HOSTS` if access url is other than localhost. With production deployment, which uses `nginx` as proxy,
+   this is not needed.
+1. Create a JSON file which contains arguments for connecting an Azure Active Directory Web app / API
+   listed below and update `DYNAMICS_CONF` with its path
 
    ```JSON
    {
@@ -18,8 +19,9 @@ When deploy, you at least need to:
         "clientSecret": "high_secret"
     }
    ```
-1. update `TOKENS_JSON` with the path of an existing file which has saved refresh and access tokens
-   or a newly created one using `ersaDynamics` (see its document - _to be created_)
+1. Update `TOKENS_JSON` with the path of an existing file which has saved refresh and access tokens
+   or a newly created one using `ersaDynamics` (see its document - _to be created_). Make sure it is
+   web server writable. In production, `nginx` should have write permission.
 
 ## Deployment for testing
 
