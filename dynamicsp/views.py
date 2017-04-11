@@ -55,44 +55,87 @@ def verify_id(dynamics_id):
     return is_valid
 
 
-product_handler = Product()
-products = list_to_dict(product_handler.list_names(), 'name', ('productid', ))
+class ProductInfo(object):
+    def __init__(self):
+        self.product_handler = Product()
+        self.products = list_to_dict(self.product_handler.list_names(), 'name', ('productid', ))
+        self._normalise_names()
+
+    def _normalise_names(self):
+        """Create a map which holds normalised internal product names which are used in urls"""
+        self.normalised_names = {}
+        for long_name in self.products:
+            self.normalised_names[long_name.lower().replace('allocation', '').replace(' ', '')] = long_name
+
+    def get_internal_name(self, short_name):
+        if short_name not in self.normalised_names:
+            raise LookupError("Unknown product name")
+        return self.normalised_names[short_name]
+
+    def get_id(self, name):
+        # Not supposedly be used directly in view functions
+        # It should be called after get_internal_name
+        return self.products[name]['productid']
+
+    def get_product_prop_defs(self, name):
+        """Get Product properties needed for quering Orders"""
+        # name of a selected property is the name of property by removing spaces
+        selected_properties = None
+        if name == 'Nectar Allocation':
+            selected_properties = ('OpenstackID', )
+        elif name == 'RDS Allocation' or name == 'RDS Backup Allocation':
+            selected_properties = ('FileSystemName', 'GrantID')
+        return self.product_handler.get_property_definitions(name, selected_properties)
 
 
-def get_product_prop_defs(prod_name):
-    """Get nectar sales order details from Dynamics"""
-    # name of a selected property is the name of property by removing spaces
-    # product_handler = Product()
-    selected_properties = None
-    if prod_name == 'Nectar Allocation':
-        selected_properties = ('OpenstackID', )
-    elif prod_name == 'RDS Allocation' or prod_name == 'RDS Backup Allocation':
-        selected_properties = ('FileSystemName', 'GrantID')
-    return product_handler.get_property_definitions(prod_name, selected_properties)
+# Object facilitates getting product names and properties
+products = ProductInfo()
+# These are not real products at all but with different meta data
+REPORT_PRODUCTS = ('ands_report', 'rds_report')
 
 
 def get_sold_product(prod_short_name, account_id=None):
-    """Get nectar sales order details from Dynamics"""
-    # map external names to Dynamics internal names.
-    prods = {
-        'nectar': 'Nectar Allocation',
-        'rds': 'RDS Allocation',
-        'rdsbackup': 'RDS Backup Allocation'
-    }
-    if prod_short_name not in prods:
+    """Get sales order details of a product from Dynamics"""
+    if prod_short_name in REPORT_PRODUCTS and account_id:
+        if prod_short_name == 'ands_report':
+            meta = _get_ands_report_meta(account_id)
+        elif prod_short_name == 'rds_report':
+            meta = _get_ands_report_meta(account_id)
+        return meta
+
+    try:
+        prod_name = products.get_internal_name(prod_short_name)
+    except LookupError:
         return HttpResponseBadRequest("Bad request - unknown product name")
 
-    prod_name = prods[prod_short_name]
-    prop_defs = get_product_prop_defs(prod_name)
+    prop_defs = products.get_product_prop_defs(prod_name)
     manager_role = {'id': settings.PROJECT_ADMIN_ROLE, 'name': 'manager'}
     order_handler = Order()
     if account_id:
         if verify_id(account_id):
-            return send_json(order_handler.get_product(products[prod_name]['productid'], account_id=account_id, prod_props=prop_defs, roles=[manager_role]))
+            return order_handler.get_product(products.get_id(prod_name), account_id=account_id, prod_props=prop_defs, roles=[manager_role])
         else:
-            return send_json([])
+            return []
     else:
-        return send_json(order_handler.get_product(products[prod_name]['productid'], prod_props=prop_defs, roles=[manager_role]))
+        return order_handler.get_product(products.get_id(prod_name), prod_props=prop_defs, roles=[manager_role])
+
+
+def _get_ands_report_meta(account_id):
+    """Get meta data from Dynamics about RDS and RDS Backup allocations
+    for ANDS NodeConnect report"""
+
+    def get_report_product(prod_short_name, account_id):
+        """Get sales order details from Dynamics"""
+        prod_name = products.get_internal_name(prod_short_name)
+        prop_defs = products.get_product_prop_defs(prod_name)
+        roles = ({'id': settings.PROJECT_ADMIN_ROLE, 'name': 'admin'}, {'id': settings.PROJECT_LEADER_ROLE, 'name': 'leader'})
+        extra = ({'name': 'description'}, )
+        order_handler = Order()
+        return order_handler.get_product(products.get_id(prod_name), account_id=account_id, prod_props=prop_defs, roles=roles, order_extra=extra)
+
+    rds = get_report_product('rds', account_id)
+    rds.extend(get_report_product('rdsbackup', account_id))
+    return rds
 
 
 def get_order_roleid(category_name, role_name):
@@ -105,15 +148,26 @@ def get_order_roleid(category_name, role_name):
     return cr.get_roleid_of(role_name, category)
 
 
-def get_for(product_id=None, account_id=None):
+def get_for(product=None, account_id=None):
     """Get FOR codes of orders
 
+    :param str product: short name of a Product, default None
+    :param str account_id: Account's UUID, default None
     :return dict: keys are order ids (salesorderid), values are list of strings of 'code: label'
+    :raise Bad request exception when product cannot be mapped to an internal name
     """
-    if product_id and not verify_id(product_id):
-        return send_json({})
     if account_id and not verify_id(account_id):
         return send_json({})
+
+    if product:
+        try:
+            prod_name = products.get_internal_name(product)
+        except LookupError:
+            return HttpResponseBadRequest("Bad request - unknown product name")
+        else:
+            product_id = products.get_id(prod_name)
+    else:
+        product_id = None
 
     order_handler = Order()
     return send_json(order_handler.get_for_codes(product_id=product_id, account_id=account_id))
@@ -165,19 +219,20 @@ class Organisation(View):
                 handler = Account()
                 return send_json(handler.get_usernames(kwargs['id']))
             elif kwargs['method'] == 'get_for':
-                return get_for(account_id=kwargs['id'], product_id=method_args.get('productid', None))
+                return get_for(account_id=kwargs['id'], product=method_args.get('product', None))
             else:
                 return HttpResponseBadRequest("Bad request - method is not implement for Organisation")
         else:
-            return send_json('about an Organisation is not implemented')
+            return send_json('About an Organisation is not implemented')
 
     @staticmethod
     def _get_service(account_id, name=None):
+        # Better named as _get_service_info?
         order_handler = Order()
 
         try:
             if name:
-                return get_sold_product(name, account_id)
+                return send_json(get_sold_product(name, account_id))
             else:
                 return send_json(order_handler.get_account_products(account_id))
         except LookupError as e:
@@ -188,19 +243,19 @@ class Organisation(View):
 class Nectar(View):
     def get(self, request, *args, **kwargs):
         """Get nectar sales order details from Dynamics"""
-        return get_sold_product('nectar')
+        return send_json(get_sold_product('nectar'))
 
 
 class RDS(View):
     def get(self, request, *args, **kwargs):
         """Get RDS sales order details from Dynamics"""
-        return get_sold_product('rds')
+        return send_json(get_sold_product('rds'))
 
 
 class RDSBackup(View):
     def get(self, request, *args, **kwargs):
         """Get RDS Backup sales order details from Dynamics"""
-        return get_sold_product('rdsbackup')
+        return send_json(get_sold_product('rdsbackup'))
 
 
 class Access(View):
@@ -213,13 +268,23 @@ class Access(View):
 class ANZSRCFor(View):
     def get(self, request, *args, **kwargs):
         """Get ANZSRC-FOR codes of Orders"""
-        # optional keyword argument productid, ignore any others
+        # optional keyword argument product is product short name, ignore any others
         method_args = request.GET.dict()
-        order_handler = Order()
-        if 'productid' in method_args:
-            if verify_id(method_args['productid']):
-                return get_for(product_id=method_args['productid'])
-            else:
-                return send_json([])
-        else:
-            return send_json(order_handler.get_for_codes())
+        return get_for(product=method_args.get('product', None))
+
+
+class RDSReport(View):
+    """Get meta data from Dynamics about RDS and RDS Backup allocations
+    for RDS Storage node collection report"""
+    # This report only needs order id, order title, allocated size
+    def get(self, request, *args, **kwargs):
+        def get_report_product(prod_short_name):
+            """Get sales order details from Dynamics"""
+            prod_name = products.get_internal_name(prod_short_name)
+            prop_defs = products.get_product_prop_defs(prod_name)
+            order_handler = Order()
+            return order_handler.get_product(products.get_id(prod_name), prod_props=prop_defs)
+
+        rds = get_report_product('rds')
+        rds.extend(get_report_product('rdsbackup'))
+        return send_json(rds)

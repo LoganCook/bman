@@ -2,7 +2,8 @@
 
 yum -y install epel-release
 yum -y update
-yum -y install gcc nginx vim screen git
+
+yum -y install gcc nginx vim screen
 yum -y install python34 python34-devel python-pip
 # packages for AAD - the dependency of ersaDynamics
 yum -y install openssl-devel libffi-devel
@@ -26,6 +27,7 @@ deactivate
 
 chown -R nginx:nginx $PDIR
 PORT=8001
+
 cat > /usr/lib/systemd/system/gunicorn.dynamicsp.service <<EOF
 [Unit]
 Description=Gunicorn daemon for serving dynamicsp
