@@ -106,7 +106,12 @@ def get_sold_product(prod_short_name, account_id=None):
         return HttpResponseBadRequest("Bad request - unknown product name")
 
     prop_defs = products.get_product_prop_defs(prod_name)
-    manager_role = {'id': settings.PROJECT_ADMIN_ROLE, 'name': 'manager'}
+    # CRM project admin role is manager except in ANDS report (admin) at the frontend
+    # CRM project leader role is leader at the frontend for ANDS (not widely used)
+    if prod_short_name == 'ersaaccount':
+        manager_role = {'id': settings.PROJECT_ADMIN_ROLE, 'name': 'manager', 'extra': [('new_username', 'username')]}
+    else:
+        manager_role = {'id': settings.PROJECT_ADMIN_ROLE, 'name': 'manager'}
     order_handler = Order()
     if account_id:
         if verify_id(account_id):
@@ -172,7 +177,7 @@ def get_for(product=None, account_id=None):
 
 def startup(request):
     """return a list of objects can be quired"""
-    services = ('organisation', 'nectar', 'rds', 'rdsbackup', 'access')
+    services = ('organisation', 'nectar', 'rds', 'rdsbackup', 'access', 'ersaaccount')
     return send_json(services)
 
 
@@ -268,6 +273,12 @@ class Access(View):
         logger.warn('Access - eRSA Account come from Contact not from Orders of eRSA Account.')
         contact_handler = Contact()
         return send_json(contact_handler.get_usernames())
+
+
+class ERSAAccount(View):
+    def get(self, request, *args, **kwargs):
+        """Get Orders of eRSA Account - HPC"""
+        return send_json(get_sold_product('ersaaccount'))
 
 
 class ANZSRCFor(View):
