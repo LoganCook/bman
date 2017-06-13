@@ -16,7 +16,7 @@ mkdir -p $PDIR/package
 
 cd $PDIR
 # install the latest commit
-curl -sL https://github.com/eResearchSA/bman/archive/dynamics.tar.gz | tar -xz -C package --strip-components=1
+curl -sL https://github.com/eResearchSA/bman/archive/master.tar.gz | tar -xz -C package --strip-components=1
 
 virtualenv -p python3 env
 source env/bin/activate
