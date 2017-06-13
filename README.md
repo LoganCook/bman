@@ -3,18 +3,18 @@ A Django application to collect and provide some information at eRSA.
 
 It contains:
 
-0. [settings example](demo/settings.py.demo)
+1. [settings example](demo/settings.py.demo)
 
   This provides a template for an actual setting.py. At least, it needs database settings and SECRET_KEY.
-0. Two sets of models
-0. APIs for others to call.
-0. A few simple pages for quick check.
+1. Two sets of models
+1. APIs for others to call.
+1. A few simple pages for quick check.
 
-##Deployment for testing
+## Deployment for testing
 
 It needs to set up a web server, a wsgi server and a database.
 
-###Web server
+### Web server
 The package can be served by, for example, __nginx__ (proxy) + __gunicorn__.
 
 If deploy on a CentOS 7 cloud instance, [script](centos7.sh) can be used to set up __nginx__ and __gunicorn__.
@@ -35,8 +35,8 @@ source env/bin/acative
 env/bin/gunicorn runner.usage_wsgi
 ```
 
-###Prepare database
-0. Create user and database if use databases other than sqlite:
+### Prepare database
+1. Create user and database if use databases other than sqlite:
     ```sql
     --Run from a sql file or in database
     CREATE USER bman WITH ENCRYPTED PASSWORD "SOMEPASSWD";
@@ -56,7 +56,7 @@ env/bin/gunicorn runner.usage_wsgi
     }
     ```
 
-0. Create tables and load data:
+1. Create tables and load data:
     ```shell
 
     sudo su
@@ -74,7 +74,7 @@ env/bin/gunicorn runner.usage_wsgi
 
    `settings` should be one of none-wsgi py file.
 
-##Start to listen to the socket
+## Start to listen to the socket
 ```shell
 sudo systemctl start gunicorn.bman.socket
 sudo systemctl enable gunicorn.bman.socket
