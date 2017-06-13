@@ -1,4 +1,4 @@
-#Design
+# Design
 
 * Person is mainly defined by names.
 * Organisation can be any entity which has multiple Persons, e.g. schools, groups.
@@ -19,7 +19,7 @@
 * *Should a Role has multiple Accounts for different services? Should them be bound
   to some scopes: server, domain?* Currently, one role one account seems fine.
 
-##Relationship
+## Relationship
 
 Relationships can be described as directed graphs. The most common way to
 describe a relationship is used to define which entity is the head, which is the tail.
@@ -32,13 +32,13 @@ e.g. root-leaf, should always follow the same pattern. The relationship between 
 university and its employees should always have university (Organisation) as tail,
 employees (Persons) as tails. In such way, the queries can be optimised.
 
-0. `name`: parent-child
-0. `tail`: entity (object type) of tail node
-0. `head`: entity (object type) of head node
-0. `forward`: label read from tail to head
-0. `backward`: label read from head to tail
+1. `name`: parent-child
+1. `tail`: entity (object type) of tail node
+1. `head`: entity (object type) of head node
+1. `forward`: label read from tail to head
+1. `backward`: label read from head to tail
 
-###Examples
+### Examples
 
 * UofA is the parent of all its schools and faculties.
 * School A is child of UofA.
@@ -48,11 +48,11 @@ employees (Persons) as tails. In such way, the queries can be optimised.
 * John Smith is a lecture at School A.
 * John Smith supervises Joe Block.
 
-##Roles - a special RelationshipType between Person and Organisation
+## Roles - a special RelationshipType between Person and Organisation
 
 Role binds a Person to an Organisation during a time period.
 
-###Role management
+### Role management
 John Smith studied at School of A, UofA as a student between Year A and B. Since
 Year C, he has been a staff member of Hospital H. Roles have been changed once:
 Student -> Staff member which had email address, role type (RelationshipType) and
@@ -74,25 +74,25 @@ The status of Role may change, such as disabled for a period of time.
 `username` is construed for a Person based on Person's information. It
 is an unique identifier of a Person and is kept when `Role` changes.
 
-###Role change events
+### Role change events
 
 When a Person's role changes, either `start_date` or `end_date` will change. Change
 of email address, username are not a Role change event. Events are:
 
-0. A Person joins an Organisation
-0. A Person changes `relationshiptype` within the Organisation
-0. Role is terminated: Person left the Organisation
+1. A Person joins an Organisation
+1. A Person changes `relationshiptype` within the Organisation
+1. Role is terminated: Person left the Organisation
 
-###Queries could be:
+### Queries could be:
 
-0. A social event is going to happen at Organisation A, who should be contacted?
-0. What is the status of an account? Only active roles are important.
-0. What were the activities of a Person/Role during a period?
-0. Between Year A.1 and Year C.2, what did John Smith do?
-   0. Changed role - one event
-   0. Activities have to be split for two roles he held when reported back.
+1. A social event is going to happen at Organisation A, who should be contacted?
+1. What is the status of an account? Only active roles are important.
+1. What were the activities of a Person/Role during a period?
+1. Between Year A.1 and Year C.2, what did John Smith do?
+   1. Changed role - one event
+   1. Activities have to be split for two roles he held when reported back.
 
-##Services
+## Services
 
 Simple services provides only access to systems. The instances only need to link
 to Roles. A Role should have an account for the service. A role by current design
@@ -114,13 +114,13 @@ can have multiple managers. For billing purpose, only one manager is treated as 
 contractor in this system. The rest of information in regarding to Nectar projects
 can be retrieved through its `openstack_id` on Nectar.
 
-###Queries could be:
+### Queries could be:
 
-0. What are the services a Person can access?
-0. What are the properties of a service to a Person?
-0. What are the services an Organisation have?
+1. What are the services a Person can access?
+1. What are the properties of a service to a Person?
+1. What are the services an Organisation have?
 
-##Urls
+## Urls
 
 For api access, define urls after /api/ with proper methods and object types:
 
@@ -134,20 +134,19 @@ For interactive access in browser, define urls after:
   * for accessing objects: /objects/types/(id)
   * for accessing form to create: /form/types/
 
-##Notes
+## Notes
 
-0. Ignore migrations until models are stable and deployed.
-0. Should consider a way of saving random information of an object. For example:
+1. Ignore migrations until models are stable and deployed.
+1. Should consider a way of saving random information of an object. For example:
    contractor person of Nectar service has `openstack_id`. Currently, it has not
    be saved any where.
-0. Event handlers have not been conceptually developed. Signals will be used and
+1. Event handlers have not been conceptually developed. Signals will be used and
    currently they are commented out.
-0. To be considered:
+1. To be considered:
     * Biller - a role object for billing purpose - send to
     * Invoices and their management: export to csv, pdf, pulling in other information from system like Xero
     * Prices and their history
-0. Provide a better price if some one bundle multiple services together. Bundled catalogues
+1. Provide a better price if some one bundle multiple services together. Bundled catalogues
    which include more than one catalogue item. The price will need to be redefined. For example,
    the price for 4 VMs with 1TB storage should be different to 4 normal VMs with normal storage
    requirements.
-
