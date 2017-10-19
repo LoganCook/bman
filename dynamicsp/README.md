@@ -2,7 +2,7 @@
 A Django application to create APIs for querying MS Dynamics of eRSA. It needs an Azure account for accessing
 the instance and manually prepared valid refresh and access tokens.
 
-The [settings file](runner/dynamicsp.py) is a template for creating actual setting files.
+The [settings file](../runner/dynamicsp.py) is a template for creating actual setting files.
 When deploy, you at least need to:
 
 1. Update `ALLOWED_HOSTS` if access url is other than localhost. With production deployment, which uses `nginx` as proxy,
@@ -20,14 +20,14 @@ When deploy, you at least need to:
     }
    ```
 1. Update `TOKENS_JSON` with the path of an existing file which has saved refresh and access tokens
-   or a newly created one using `ersaDynamics` (see its document - _to be created_). Make sure it is
-   web server writable. In production, `nginx` should have write permission.
+   or a newly created one using [`ersaDynamics`](https://github.com/eResearchSA/ersaDynamics). Make sure it is
+   web server writable. In production, `nginx` should have write permission to it.
 
 ## Deployment for testing
 
 Either `python manager.py` or `gunicorn`  with `--settings runner.dynamicsp` from project path is OK.
 
-For using __nginx__ (proxy) + __gunicorn__ and on a CentOS 7 cloud instance, [script](centos7_dynamicsp.sh)
+For using __nginx__ (proxy) + __gunicorn__ and on a CentOS 7 cloud instance, [script](../centos7_dynamicsp.sh)
 can be used to set up __nginx__ and __gunicorn__.
 _Note_: this script does not do everything to get the application up running as configuration files are not handled by it.
 This is better done after boot (manual work).

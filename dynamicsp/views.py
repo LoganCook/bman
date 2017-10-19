@@ -108,7 +108,7 @@ def get_sold_product(prod_short_name, account_id=None):
     prop_defs = products.get_product_prop_defs(prod_name)
     # CRM project admin role is manager except in ANDS report (admin) at the frontend
     # CRM project leader role is leader at the frontend for ANDS (not widely used)
-    if prod_short_name == 'ersaaccount':
+    if prod_short_name in ('ersaaccount', 'tangocompute'):
         manager_role = {'id': settings.PROJECT_ADMIN_ROLE, 'name': 'manager', 'extra': [('new_username', 'username')]}
     else:
         manager_role = {'id': settings.PROJECT_ADMIN_ROLE, 'name': 'manager'}
@@ -177,7 +177,7 @@ def get_for(product=None, account_id=None):
 
 def startup(request):
     """return a list of objects can be quired"""
-    services = ('organisation', 'nectar', 'rds', 'rdsbackup', 'access', 'ersaaccount')
+    services = ('organisation', 'nectar', 'rds', 'rdsbackup', 'access', 'ersaaccount', 'tangocompute')
     return send_json(services)
 
 
@@ -218,9 +218,7 @@ class Organisation(View):
             if kwargs['method'] == 'get_service':
                 return self._get_service(kwargs['id'], **method_args)
             elif kwargs['method'] == 'get_access':
-                # TODO: in future can be called by get_service?name=ersaaccount once eRSA Account Product has username property.
-                #       then, there is no need of get_access method. See comment in class Access.
-                logger.warn('get_access - eRSA Account come from Contact of Organisation not from Orders of eRSA Account of Organisation.')
+                # TODO: Do we still need usernames at organisational level?
                 handler = Account()
                 return send_json(handler.get_usernames(kwargs['id']))
             elif kwargs['method'] == 'get_for':
@@ -265,12 +263,7 @@ class RDSBackup(View):
 
 class Access(View):
     def get(self, request, *args, **kwargs):
-        """Get eRSA accounts details from Dynamics"""
-        # TODO: currently product eRSA Account has no property, at least we need username
-        #       so even there are Orders for eRSA Account, we cannot use Order-Product-ProductProperty
-        #       relationship. Contact is enough for user has only one eRSA Account
-        # return send_json(get_sold_product('ersaaccount'))
-        logger.warn('Access - eRSA Account come from Contact not from Orders of eRSA Account.')
+        """Get eRSA accounts usernames from Dynamics"""
         contact_handler = Contact()
         return send_json(contact_handler.get_usernames())
 
@@ -280,6 +273,10 @@ class ERSAAccount(View):
         """Get Orders of eRSA Account - HPC"""
         return send_json(get_sold_product('ersaaccount'))
 
+class TangoCompute(View):
+    def get(self, request, *args, **kwargs):
+        """Get Orders of TANGO Compute -HPC"""
+        return send_json(get_sold_product('tangocompute'))
 
 class ANZSRCFor(View):
     def get(self, request, *args, **kwargs):
