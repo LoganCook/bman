@@ -64,6 +64,10 @@ class ProductInfo(object):
         for long_name in self.products:
             self.normalised_names[long_name.lower().replace('allocation', '').replace(' ', '')] = long_name
 
+    def get_short_names(self):
+        """Get a list of normalised product names which can be used in API calls"""
+        return list(self.normalised_names.keys())
+
     def get_internal_name(self, short_name):
         if short_name not in self.normalised_names:
             raise LookupError("Unknown product name")
@@ -75,12 +79,16 @@ class ProductInfo(object):
         return self.products[name]['productid']
 
     def get_product_prop_defs(self, name):
-        """Get Product properties needed for quering Orders"""
-        # name of a selected property is the name of property by removing spaces
+        """Get Product properties needed for quering Orders for billing purpose"""
+        # Reminder: for products which has more than one properties,
+        # only include link id between usage and Order for billing Order query.
+        # TODO: can I put them into a configuration file?
+        # The name of a selected property is the name of property by removing spaces
+        # and other invlaid characters: only [A-Z], [a-z] or [0-9] or _ are allowed
         selected_properties = None
-        if name == 'Nectar Allocation':
-            selected_properties = ('OpenstackID', )
-        elif name == 'RDS Allocation' or name == 'RDS Backup Allocation':
+        if name in ('Nectar Cloud VM', 'TANGO Cloud VM'):
+            selected_properties = ('OpenstackProjectID', )
+        elif name in ('Attached Storage', 'Attached Backup Storage'):
             selected_properties = ('FileSystemName', 'GrantID')
         return self.product_handler.get_property_definitions(name, selected_properties)
 
@@ -94,11 +102,8 @@ REPORT_PRODUCTS = ('ands_report', 'rds_report')
 def get_sold_product(prod_short_name, account_id=None):
     """Get sales order details of a product from Dynamics"""
     if prod_short_name in REPORT_PRODUCTS and account_id:
-        if prod_short_name == 'ands_report':
-            meta = _get_ands_report_meta(account_id)
-        elif prod_short_name == 'rds_report':
-            meta = _get_ands_report_meta(account_id)
-        return meta
+        if prod_short_name in ('ands_report', 'rds_report'):
+            return _get_ands_report_meta(account_id)
 
     try:
         prod_name = products.get_internal_name(prod_short_name)
@@ -135,8 +140,8 @@ def _get_ands_report_meta(account_id):
         order_handler = Order()
         return order_handler.get_product(products.get_id(prod_name), account_id=account_id, prod_props=prop_defs, roles=roles, order_extra=extra)
 
-    rds = get_report_product('rds', account_id)
-    rds.extend(get_report_product('rdsbackup', account_id))
+    rds = get_report_product('attachedstorage', account_id)
+    rds.extend(get_report_product('attachedbackupstorage', account_id))
     return rds
 
 
@@ -176,9 +181,22 @@ def get_for(product=None, account_id=None):
 
 
 def startup(request):
-    """return a list of objects can be quired"""
-    services = ('organisation', 'nectar', 'rds', 'rdsbackup', 'access', 'ersaaccount', 'tangocompute')
+    """Return a list of names of order | product | servicecan be queried + organisation"""
+    # used in debugging
+    services = products.get_short_names()
+    services.append('organisation')
     return send_json(services)
+
+
+class Contract(View):
+    """View to return orders (contract) of a product by its name"""
+    def get(self, request, *args, **kwargs):
+        try:
+            products.get_internal_name(kwargs['name'])
+        except LookupError:
+            return HttpResponseBadRequest("Bad request - unknown product name")
+        else:
+            return send_json(get_sold_product(kwargs['name']))
 
 
 class Organisations(View):
@@ -243,24 +261,6 @@ class Organisation(View):
             return send_json([])
 
 
-class Nectar(View):
-    def get(self, request, *args, **kwargs):
-        """Get nectar sales order details from Dynamics"""
-        return send_json(get_sold_product('nectar'))
-
-
-class RDS(View):
-    def get(self, request, *args, **kwargs):
-        """Get RDS sales order details from Dynamics"""
-        return send_json(get_sold_product('rds'))
-
-
-class RDSBackup(View):
-    def get(self, request, *args, **kwargs):
-        """Get RDS Backup sales order details from Dynamics"""
-        return send_json(get_sold_product('rdsbackup'))
-
-
 class Access(View):
     def get(self, request, *args, **kwargs):
         """Get eRSA accounts usernames from Dynamics"""
@@ -298,6 +298,6 @@ class RDSReport(View):
             order_handler = Order()
             return order_handler.get_product(products.get_id(prod_name), prod_props=prop_defs)
 
-        rds = get_report_product('rds')
-        rds.extend(get_report_product('rdsbackup'))
+        rds = get_report_product('attachedstorage')
+        rds.extend(get_report_product('attachedbackupstorage'))
         return send_json(rds)

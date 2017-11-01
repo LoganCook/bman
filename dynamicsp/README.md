@@ -50,3 +50,8 @@ have been created, for performance reason, instead of collecting them at run tim
 set in settings. You of course can get these values by calling `views.get_order_roleid` with names. The
 roles and their Dynamics Ids are set in settings are: `PROJECT_ADMIN_ROLE`, `PROJECT_LEADER_ROLE` and
 `PROJECT_MEMBER_ROLE`.
+
+### v2 apis
+
+For admin views, you can use `/api/v2/contract/name/` to get Order
+information or using previous endpoints `/api/name/` if the product name has not been changed.
