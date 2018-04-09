@@ -7,7 +7,7 @@ from django.views.generic import View
 from django.http import HttpResponseBadRequest, JsonResponse
 
 from edynam import connect
-from edynam.models import Account, Contact, Order, Product, Optionset, ConnectionRole
+from edynam.models import Account, Contact, Order, Product, Optionset, ConnectionRole, ProductPricelist
 
 logging.basicConfig(level=logging.DEBUG,
                     format='%(levelname)s %(asctime)s %(filename)s %(module)s.%(funcName)s +%(lineno)d: %(message)s')
@@ -301,3 +301,10 @@ class RDSReport(View):
         rds = get_report_product('attachedstorage')
         rds.extend(get_report_product('attachedbackupstorage'))
         return send_json(rds)
+
+
+class Pricelist(View):
+    def get(self, request, *args, **kwargs):
+        """Get product price list from Dynamics"""
+        price_handler = ProductPricelist()
+        return send_json(price_handler.map_list(price_handler.list()))
