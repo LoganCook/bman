@@ -1,4 +1,5 @@
 # python manage.py runserver --sett runner.dynamicsp
+import json
 import uuid
 import logging
 
@@ -84,7 +85,7 @@ class ProductInfo(object):
         # only include link id between usage and Order for billing Order query.
         # TODO: can I put them into a configuration file?
         # The name of a selected property is the name of property by removing spaces
-        # and other invlaid characters: only [A-Z], [a-z] or [0-9] or _ are allowed
+        # and other invalid characters: only [A-Z], [a-z] or [0-9] or _ are allowed
         selected_properties = None
         if name in ('Nectar Cloud VM', 'TANGO Cloud VM'):
             selected_properties = ('OpenstackProjectID', )
@@ -186,6 +187,19 @@ def startup(request):
     services = products.get_short_names()
     services.append('organisation')
     return send_json(services)
+
+
+def composed_products(request):
+    """Return composed production defintion"""
+    # only use lower case, short names
+    # { "product1": ["otherprod1", "otherprod2"],
+    #   "product2": [,]
+    # }
+    content = {}
+    if hasattr(settings, 'COMPOSEDPRODUCTS'):
+        with open(settings.COMPOSEDPRODUCTS, "r") as jf:
+            content = json.load(jf)
+    return send_json(content)
 
 
 class Contract(View):

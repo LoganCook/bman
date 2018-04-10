@@ -3,6 +3,7 @@ from . import views
 
 urlpatterns = [
     url(r'^$', views.startup, name='service-index'),
+    url(r'^(?i)api/composed_products/$', views.composed_products, name='composed-products'),
     # url(r'^Organisation$', views.get_tops, name='nectar'),
     # url(r'^nectar$', views.get_nectar, name='get_top_orgs'),
     url(r'^(?i)api/organisation/$', views.Organisations.as_view(), name='api-orgs'),
