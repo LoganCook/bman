@@ -320,5 +320,16 @@ class RDSReport(View):
 class Pricelist(View):
     def get(self, request, *args, **kwargs):
         """Get product price list from Dynamics"""
+        # optional keyword argument product is product short name, ignore any others
         price_handler = ProductPricelist()
+        method_args = request.GET.dict()
+        product_short_name = method_args.get('product', None)
+        if product_short_name:
+            try:
+                product_name = products.get_internal_name(product_short_name)
+                return send_json(price_handler.get_prices(product_name))
+            except LookupError as e:
+                logger.error('No record found. Details: %s', str(e))
+                return send_json([])
+
         return send_json(price_handler.map_list(price_handler.list()))
