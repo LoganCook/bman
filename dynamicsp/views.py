@@ -57,11 +57,11 @@ class ProductInfo(object):
     def __init__(self):
         self.product_handler = Product()
         self.products = list_to_dict(self.product_handler.list_names(), 'name', ('productid', ))
+        self.normalised_names = {}
         self._normalise_names()
 
     def _normalise_names(self):
         """Create a map which holds normalised internal product names which are used in urls"""
-        self.normalised_names = {}
         for long_name in self.products:
             self.normalised_names[long_name.lower().replace('allocation', '').replace(' ', '')] = long_name
 
