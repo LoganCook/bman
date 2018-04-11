@@ -189,19 +189,6 @@ def startup(request):
     return send_json(services)
 
 
-def composed_products(request):
-    """Return composed production defintion"""
-    # only use lower case, short names
-    # { "product1": ["otherprod1", "otherprod2"],
-    #   "product2": [,]
-    # }
-    content = {}
-    if hasattr(settings, 'COMPOSEDPRODUCTS'):
-        with open(settings.COMPOSEDPRODUCTS, "r") as jf:
-            content = json.load(jf)
-    return send_json(content)
-
-
 class Contract(View):
     """View to return orders (contract) of a product by its name"""
     def get(self, request, *args, **kwargs):

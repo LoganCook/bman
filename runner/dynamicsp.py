@@ -58,11 +58,6 @@ USE_TZ = True
 
 DYNAMICS_CONF = BASE_DIR + '/dyncon.json'
 TOKENS_JSON = BASE_DIR + '/saved_tokens.json'
-# Optional configuration file if there are composed product: only use lower case, short names
-# { "product1": ["otherprod1", "otherprod2"],
-#   "product2": [,]
-# }
-COMPOSEDPRODUCTS = BASE_DIR + '/composed_products.json'
 
 # Hard coded Contact person of an Order's ConnectionRole ids for performance
 # views.get_order_roleid is the code to get id
