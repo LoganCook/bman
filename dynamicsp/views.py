@@ -1,4 +1,5 @@
 # python manage.py runserver --sett runner.dynamicsp
+import re
 import json
 import uuid
 import logging
@@ -52,6 +53,9 @@ def verify_id(dynamics_id):
         is_valid = False
     return is_valid
 
+# Used to normalize product by just keeping alphanumeric characters in product names
+ALPHANUMERIC = re.compile(r'[^a-zA-Z0-9]')
+
 
 class ProductInfo(object):
     def __init__(self):
@@ -63,7 +67,8 @@ class ProductInfo(object):
     def _normalise_names(self):
         """Create a map which holds normalised internal product names which are used in urls"""
         for long_name in self.products:
-            self.normalised_names[long_name.lower().replace('allocation', '').replace(' ', '')] = long_name
+            normalized = ALPHANUMERIC.sub('', long_name)
+            self.normalised_names[normalized.lower().replace('allocation', '')] = long_name
 
     def get_short_names(self):
         """Get a list of normalised product names which can be used in API calls"""
