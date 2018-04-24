@@ -12,3 +12,4 @@ build/
 migrations/
 tags
 *.json
+*env

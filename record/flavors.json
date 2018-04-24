@@ -1,0 +1,112 @@
+[
+    {
+        "id": "1d665807-90e5-4fa2-9a9c-8580c8fa0134",
+        "vcpus": 4,
+        "ephemeral": 80,
+        "name": "m2.large",
+        "ram": 12288,
+        "disk": 30,
+        "public": true,
+        "openstack_id": "13000ccd-6a24-4bc5-9520-743707f8c0a2"
+    },
+    {
+        "id": "1de52662-58ec-4e76-84e6-1fd681c4aa3e",
+        "vcpus": 8,
+        "ephemeral": 240,
+        "name": "m1.xlarge",
+        "ram": 32768,
+        "disk": 10,
+        "public": true,
+        "openstack_id": "2"
+    },
+    {
+        "id": "23d18cdc-f401-4daa-8d44-c593ec29775b",
+        "vcpus": 1,
+        "ephemeral": 30,
+        "name": "m1.small",
+        "ram": 4096,
+        "disk": 10,
+        "public": true,
+        "openstack_id": "0"
+    },
+    {
+        "id": "554f5150-49df-466c-8f3d-e93146e573b9",
+        "vcpus": 4,
+        "ephemeral": 120,
+        "name": "m1.large",
+        "ram": 16384,
+        "disk": 10,
+        "public": true,
+        "openstack_id": "4"
+    },
+    {
+        "id": "5a92ddd9-e75d-4fa4-ba9a-1a8e5170141e",
+        "vcpus": 1,
+        "ephemeral": 0,
+        "name": "m2.xsmall",
+        "ram": 2048,
+        "disk": 10,
+        "public": true,
+        "openstack_id": "7da7cebe-68d1-4838-9c2a-c091c087bdbb"
+    },
+    {
+        "id": "729b8b94-0149-41be-858f-5b22f83458b1",
+        "vcpus": 2,
+        "ephemeral": 0,
+        "name": "m2.medium",
+        "ram": 6144,
+        "disk": 30,
+        "public": true,
+        "openstack_id": "885227de-b7ee-42af-a209-2f1ff59bc330"
+    },
+    {
+        "id": "9c0dc757-ead9-4a44-8e19-e2ed115be3fc",
+        "vcpus": 2,
+        "ephemeral": 60,
+        "name": "m1.medium",
+        "ram": 8192,
+        "disk": 10,
+        "public": true,
+        "openstack_id": "1"
+    },
+    {
+        "id": "a11cdad7-463c-4205-89b5-3e183dd42928",
+        "vcpus": 16,
+        "ephemeral": 480,
+        "name": "m1.xxlarge",
+        "ram": 65536,
+        "disk": 10,
+        "public": true,
+        "openstack_id": "3"
+    },
+    {
+        "id": "a16ee5e5-a9d3-4f94-b07a-58b98a56ac17",
+        "vcpus": 1,
+        "ephemeral": 0,
+        "name": "m2.small",
+        "ram": 4096,
+        "disk": 30,
+        "public": true,
+        "openstack_id": "639b8b2a-a5a6-4aa2-8592-ca765ee7af63"
+    },
+    {
+        "id": "bb0be3af-bfa8-450a-90b3-25bb1a990445",
+        "vcpus": 12,
+        "ephemeral": 360,
+        "name": "m2.xlarge",
+        "ram": 49152,
+        "disk": 30,
+        "public": true,
+        "openstack_id": "c46104de-d5fd-4567-ab0b-3dcfd117bd99"
+    },
+    {
+        "id": "e5286369-0265-47fe-816f-f6f004d24420",
+        "vcpus": 1,
+        "ephemeral": 0,
+        "name": "m2.tiny",
+        "ram": 768,
+        "disk": 5,
+        "public": true,
+        "openstack_id": "cba9ea52-8e90-468b-b8c2-777a94d81ed3"
+    }
+]

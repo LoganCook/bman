@@ -1,0 +1,34 @@
+{
+  "Prefix of ingester class name, e.g. Tangocloudvm": {
+    "product-no": "actual product number in CRM",
+    "CRM": {
+      "url": "http://url/bman/api/",
+      "identifier": "OpenstackProjectID"
+    },
+    "USAGE": {
+      "original-data": {
+        "url": "http://url/nova",
+        "headers": {
+          "x-ersa-auth-token": "11111111-2222-3333-4444-555555555555"
+        }
+      },
+      "fee-field": "disk",
+      "composition": {
+        "product-no1 from which price is from": "usage field1",
+        "product-no2 from which price is from": "usage field2"
+      },
+      "orderline": {
+        "crm-linker": "id",
+        "aggregators": ["usage2", "usage1"],
+        "extra": {
+          "usage field3": "server_id",
+          "usage field4": "server"
+        }
+      },
+      "fields": {
+        "usage field5": "storage",
+        "usage field6": "span"
+      }
+    }
+  }
+}
