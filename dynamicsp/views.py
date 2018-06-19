@@ -1,6 +1,5 @@
 # python manage.py runserver --sett runner.dynamicsp
 import re
-import json
 import uuid
 import logging
 
@@ -9,7 +8,7 @@ from django.views.generic import View
 from django.http import HttpResponseBadRequest, JsonResponse
 
 from edynam import connect
-from edynam.models import Account, Contact, Order, Product, Optionset, ConnectionRole, ProductPricelist
+from edynam.models import Account, Contact, Order, Product, Optionset, ConnectionRole, ProductPricelist, Substitute
 
 logging.basicConfig(level=logging.DEBUG,
                     format='%(levelname)s %(asctime)s %(filename)s %(module)s.%(funcName)s +%(lineno)d: %(message)s')
@@ -52,6 +51,7 @@ def verify_id(dynamics_id):
     except ValueError:
         is_valid = False
     return is_valid
+
 
 # Used to normalize product by just keeping alphanumeric characters in product names
 ALPHANUMERIC = re.compile(r'[^a-zA-Z0-9]')
@@ -279,10 +279,12 @@ class ERSAAccount(View):
         """Get Orders of eRSA Account - HPC"""
         return send_json(get_sold_product('ersaaccount'))
 
+
 class TangoCompute(View):
     def get(self, request, *args, **kwargs):
         """Get Orders of TANGO Compute -HPC"""
         return send_json(get_sold_product('tangocompute'))
+
 
 class ANZSRCFor(View):
     def get(self, request, *args, **kwargs):
@@ -324,4 +326,11 @@ class Pricelist(View):
                 logger.error('No record found. Details: %s', str(e))
                 return send_json([])
 
-        return send_json(price_handler.map_list(price_handler.list()))
+        return send_json(price_handler.list())
+
+
+class SubstituteList(View):
+    def get(self, request, *args, **kwargs):
+        """Get product subsitute list from Dynamics"""
+        subsitute_handler = Substitute()
+        return send_json(subsitute_handler.list())

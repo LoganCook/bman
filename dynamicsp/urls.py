@@ -16,4 +16,6 @@ urlpatterns = [
     url(r'^(?i)api/anzsrc-for/$', views.ANZSRCFor.as_view(), name='api-anzsrc-for'),  # ANZSRC-FOR codes of orders
     url(r'^(?i)api/rdsreport/$', views.RDSReport.as_view(), name='api-rds-report'),  # Order information for RDS report
     url(r'^(?i)api/pricelist/$', views.Pricelist.as_view(), name='api-pricelist'),  # Product price list
+    url(r'^(?i)api/product/pricelist/$', views.Pricelist.as_view(), name='api-pricelist'),  # Product price list
+    url(r'^(?i)api/product/substitute/$', views.SubstituteList.as_view(), name='api-substitute'),  # Product substitute list
 ]
