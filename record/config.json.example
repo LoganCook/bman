@@ -30,5 +30,21 @@
         "usage field6": "span"
       }
     }
+  },
+  "Hpc": {
+    "product-no": "0000",
+    "CRM": {
+      "url": "http://url/bman/api/",
+      "identifier": "account"
+    },
+    "USAGE": {
+      "original-data": {
+        "url": "http://url/nova"
+      },
+      "orderline": {
+        "crm-linker": "user"
+      },
+      "fee-field": "cpu_seconds"
+    }
   }
 }

@@ -1,37 +1,9 @@
-import os
 import json
 import logging
 
 import requests
 
-from date_helpers import date_range_to_timestamps
-
 logger = logging.getLogger('record.management')
-
-
-def read_conf(path):
-    """Read a configuration JSON with a structure shown in record.config.json.example"""
-    # Check that the configuration file exists
-    if not os.path.isfile(path):
-        raise Exception('Config file %s cannot be found' % path)
-
-    with open(path, 'r') as f:
-        conf = json.load(f)
-    return conf
-
-
-def prepare_command(options):
-    """Parse a command options to get service, man_date, max_date and config of the service"""
-    min_date, max_date = date_range_to_timestamps(options['start'], options['end'])
-
-    service = options['type'].capitalize()
-    config = read_conf(options['conf'])
-    logger.info("Config file path %s", options['conf'])
-
-    if service not in config:
-        raise KeyError('No configuration found for %s' % service)
-
-    return service, min_date, max_date, config[service]
 
 
 def get_json(url, params=None, headers=None, verify_ssl=True, timeout=10):

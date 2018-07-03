@@ -25,16 +25,11 @@ class BaseStorageIngester(UsageIngester):
 
         Storage.objects.get_or_create(**data)
 
-    def calculate_fee(self, usage, start, end):
-        """Override base method to calculate fee for storage"""
-        logger.debug('usage sent to calculate_fee: %s', usage.usage)
-        # Even price is in GB, actual charge is calculated in blocks: 250GB
+    def get_fee_field_value(self, usage, field_name):
+        """Override base method to convert storage from GB to Blocks"""
+        # Even price is in GB, actual charge is calculated in blocks: 250GB/block
         # Round around block
-        used_space = math.ceil(getattr(usage, self.configuration.fee_field) / 250) * 250
-        logger.debug('used_space: %s', used_space)
-        # FIXME: change from do everything in derived class to just modify usage fields
-        # then call super().calculated_fee with updated usage fields
-        return used_space * self._get_price(usage.orderline.order.price_list, start, end)
+        return math.ceil(super().get_fee_field_value(usage, field_name) / 250) * 250
 
 
 class XfsIngester(BaseStorageIngester):

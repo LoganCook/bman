@@ -257,7 +257,6 @@ class UsageIngester:
         return getattr(usage, field_name)
 
     def calculate_fee(self, usage, start, end):
-        # TODO: rewrite storage ingester which has calculate_fee overload
         fee = 0
         for product_no in self.billing_items:
             # Product of Miscellaneous Charges is pseudo should not be a part of calculation

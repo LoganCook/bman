@@ -2,7 +2,12 @@
 
 from django.test import TestCase
 
+from date_helpers import date_string_to_timestamp
+
 from record.management.utils import get_hierarchy
+from record.management.utils.command_helper import prepare_command
+from record.models import Product
+from record.management.ingesters.base import UsageIngester
 
 
 class UtilsTestCase(TestCase):
@@ -73,3 +78,29 @@ class UtilsTestCase(TestCase):
         for field in essential_fields:
             self.assertTrue(field in child)
         self.assertTrue('parent_id' in child)
+
+
+class CommandsTestCase(TestCase):
+    def setUp(self):
+        Product.objects.create(name='hpc demo',
+                               dynamics_id='1234',
+                               no='0000',
+                               structure='Product',
+                               type='Serveice')
+        self.options = {
+            "start": "20180101",
+            "end": "20180131",
+            "conf": "record/config.json.example",
+            "type": "hpc",
+            "substitutes_json": None
+        }
+
+    def test_prepare_command(self):
+        calculator, min_date, max_date, service_config = prepare_command(self.options)
+        self.assertIsInstance(calculator, UsageIngester)
+        self.assertEqual(min_date, date_string_to_timestamp(self.options['start']))
+        # DAY_IN_SECS = 86399  # 24 * 60 * 60 - 1
+        self.assertEqual(max_date, date_string_to_timestamp(self.options['end']) + 86399)
+        self.assertIn('product-no', service_config)
+        self.assertIn('CRM', service_config)
+        self.assertIn('USAGE', service_config)
