@@ -294,18 +294,6 @@ class UsageIngester:
     def get_usage(self, start, end):
         raise NotImplementedError
 
-    def ingest(self, start, end, calculate_fee=False):
-        """Ingest usage data from source, calculate fee if needed"""
-        # this is only useful when orderline can be created independent to usage data
-        # for vms, it is OK
-        # for nectar, it is NOT
-        for usage in self.get_data(start, end):
-            try:
-                orderline = self._get_orderline(usage)
-            except Exception as err:
-                logger.error('Cannot create/get orderline. %s %s %s', str(err), usage, orderline)
-            self.save(start, end, orderline, usage, calculate_fee)
-
     def save(self, start, end, orderline, usage, calculate_fee=False):
         """Save a usage entry, calculate fee when is needed"""
         # Used when orderline can only be created use the help from usage data
