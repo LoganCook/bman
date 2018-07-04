@@ -1,11 +1,15 @@
 from functools import wraps
 import logging
+import sys
 
 from django.http import JsonResponse
 
 from utils import get_class_names
+from ..models import (TangocloudvmUsage, NectarvmUsage, StorageUsage, HpcUsage, Contact)  # noqa # pylint: disable=unused-import
 
 logger = logging.getLogger(__name__)
+
+_current_module = sys.modules[__name__]
 
 
 def supported_products():
@@ -39,7 +43,11 @@ def verify_product_no(func):
     return wrapper
 
 
-def _get_timestamps_email(request, email_optional=False):
+def get_usage_class(product_no):
+    return getattr(_current_module, product_no.capitalize() + 'Usage')
+
+
+def get_timestamps_email(request, email_optional=False):
     if email_optional:
         return request.GET['start'], request.GET['end']
     return request.GET['start'], request.GET['end'], request.GET['email']

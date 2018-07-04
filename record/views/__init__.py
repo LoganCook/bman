@@ -3,7 +3,7 @@ from django.db.models import F, Prefetch, Sum, Avg
 
 from date_helpers import month_to_start_end_timestamps
 from ..models import Account, Manager, Order, Orderline, Fee, Tangocloudvm, TangocloudvmUsage
-from .helpers import convert_qs, cors_response, verify_product_no, _get_timestamps_email
+from .helpers import convert_qs, cors_response, verify_product_no, get_timestamps_email
 from .fee import fee_all, fee_sum, fee_by_prod, fee_sum_by_prod
 from . import usage, price
 
@@ -20,24 +20,24 @@ def contract(request):
 
 
 def fee_list(request):
-    start, end = _get_timestamps_email(request, True)
+    start, end = get_timestamps_email(request, True)
     return fee_all(start, end)
 
 
 def fee_summary(request):
-    start, end = _get_timestamps_email(request, True)
+    start, end = get_timestamps_email(request, True)
     return fee_sum(start, end)
 
 
 @verify_product_no
 def fee_by_prod_range(request, product_no):
-    start, end = _get_timestamps_email(request, True)
+    start, end = get_timestamps_email(request, True)
     return fee_by_prod(product_no, start, end)
 
 
 @verify_product_no
 def fee_summary_by_prod_range(request, product_no):
-    start, end = _get_timestamps_email(request, True)
+    start, end = get_timestamps_email(request, True)
     return fee_sum_by_prod(product_no, start, end)
 
 
@@ -97,12 +97,12 @@ def create_tango_base_qs(start, end):
 # Security checking here can be easily bypassed
 def tango_temp_admin(request):
     # This url currently is not checked who can access.
-    start, end = _get_timestamps_email(request, True)
+    start, end = get_timestamps_email(request, True)
     return package_tango_data(create_tango_base_qs(start, end))
 
 
 def tango_temp(request):
-    start, end, email = _get_timestamps_email(request)
+    start, end, email = get_timestamps_email(request)
     # account manager query
     # FIXME: this quick way may not the best solution: Use Contact as the starting point instead
     manager_account_id = Manager.get_managed_account_id(email)

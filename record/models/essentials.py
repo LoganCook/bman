@@ -368,6 +368,11 @@ class Usage(models.Model):
             results.append(result)
         return results
 
+    @classmethod
+    def create_fee_base_qs(cls, start, end):
+        return Fee.objects.filter(orderline_id__in=cls.objects.filter(
+            start__gte=start, end__lte=end).values('orderline_id'))
+
 
 class Fee(models.Model):
     # bill can have different periods than usage data

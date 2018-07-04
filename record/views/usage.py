@@ -1,12 +1,10 @@
 import logging
-import sys
 
 from date_helpers import month_to_start_end_timestamps
 
-from .helpers import convert_qs, convert_list, verify_product_no, _get_timestamps_email, unauthorized
+from .helpers import (convert_qs, convert_list, verify_product_no,
+                      get_timestamps_email, unauthorized, get_usage_class)
 from ..models import (TangocloudvmUsage, NectarvmUsage, StorageUsage, HpcUsage, Contact)  # noqa # pylint: disable=unused-import
-
-_current_module = sys.modules[__name__]
 
 logger = logging.getLogger(__name__)
 
@@ -17,7 +15,7 @@ logger = logging.getLogger(__name__)
 @verify_product_no
 def usage_list(request, product_no):
     """List usage of a product in a period defined by start and end"""
-    start, end, email = _get_timestamps_email(request)
+    start, end, email = get_timestamps_email(request)
     return _usage_list(email, product_no, start, end)
 
 
@@ -30,12 +28,8 @@ def monthly_usage_list(request, product_no, year, month):
 @verify_product_no
 def usage_summary(request, product_no):
     """List usage summary of a product in a period defined by start and end by orderline"""
-    start, end = _get_timestamps_email(request, True)
+    start, end = get_timestamps_email(request, True)
     return _usage_sum(product_no, start, end)
-
-
-def _get_usage_class(product_no):
-    return getattr(_current_module, product_no.capitalize() + 'Usage')
 
 
 def _usage_list(email, product_no, start, end):
@@ -45,7 +39,7 @@ def _usage_list(email, product_no, start, end):
     except Contact.DoesNotExist:
         return unauthorized()
 
-    usage_class = _get_usage_class(product_no)
+    usage_class = get_usage_class(product_no)
     if contact.is_admin:
         orderline_qs = usage_class.create_base_qs(start, end)
     else:
@@ -60,5 +54,5 @@ def _usage_list(email, product_no, start, end):
 
 def _usage_sum(product_no, start, end):
     """List of all records of Price with their native fields"""
-    usage_class = _get_usage_class(product_no)
+    usage_class = get_usage_class(product_no)
     return convert_qs(usage_class.get(start, end), usage_class.get_default_fields())

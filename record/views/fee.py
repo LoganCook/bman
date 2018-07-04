@@ -1,7 +1,7 @@
 from django.db.models import Sum
 
 from ..models import Fee
-from .helpers import convert_qs, convert_list
+from .helpers import convert_qs, convert_list, get_usage_class
 
 
 def fee_all(start, end):
@@ -16,9 +16,13 @@ def fee_sum(start, end):
 
 def fee_by_prod(product_no, start, end):
     """List all records of Fee filtered by product number with their native fields"""
-    return convert_qs(Fee.of_product_by_no(product_no, start, end), Fee.get_default_fields())
+    usage_class = get_usage_class(product_no)
+    return convert_qs(usage_class.create_fee_base_qs(start, end),
+                      Fee.get_default_fields())
 
 
 def fee_sum_by_prod(product_no, start, end):
     """List all records of Fee filtered by product number with their native fields"""
-    return convert_list(list(Fee.of_product_by_no(product_no, start, end).values('orderline_id').annotate(total_amount=Sum('amount'))))
+    usage_class = get_usage_class(product_no)
+    fee_base_qs = usage_class.create_fee_base_qs(start, end)
+    return convert_list(list(fee_base_qs.values('orderline_id').annotate(total_amount=Sum('amount'))))
