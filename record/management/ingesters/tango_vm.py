@@ -15,19 +15,12 @@ class TangocloudvmIngester(UsageIngester):
         # This usage actually comes from config table Tangocloudvm: only core and ram are used
         return Tangocloudvm.get(start, end)
 
-    # TODO: change it to using ingesting config
     def save_config(self, orderline, usage):
+        data = {'orderline_id': orderline.id}
         try:
-            Tangocloudvm.objects.get_or_create(
-                orderline=orderline,
-                server_id=usage['id'],
-                server=usage['server'],
-                core=usage['core'],
-                ram=usage['ram'],
-                os=usage['os'],
-                business_unit=usage['businessUnit'])
-        except Exception as err:
-            logger.error('Failed to record configuration of instance with id=%s, product number=%s, detail: %s',
-                         usage['id'],
-                         self.configuration.product_no,
-                         err)
+            for ori, target in self.configuration.orderline_configuration_map.items():
+                data[target] = usage[ori]
+        except KeyError as err:
+            raise KeyError('Missing key %s in %s' % (err, usage))
+
+        Tangocloudvm.objects.get_or_create(**data)

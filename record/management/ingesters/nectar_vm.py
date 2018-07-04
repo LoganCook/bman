@@ -44,20 +44,12 @@ class NectarvmIngester(UsageIngester):
         # Update useage with flavor information, this will be available to the next caller
         data = {'orderline_id': orderline.id}
         if self.flavors[usage['flavor']] is None:
-            raise ValueError('Cannot map to flavor id %s' % usage['flavor'])
+            raise ValueError('Cannot map flavor id %s' % usage['flavor'])
         usage.update(self.flavors[usage['flavor']])
         try:
             for ori, target in self.configuration.orderline_configuration_map.items():
                 data[target] = usage[ori]
         except KeyError as err:
-            logger.error('Missing key %s in %s from %s', err, data, self.flavors)
-            return
+            raise KeyError('Missing key %s in %s' % (err, usage))
 
         Nectarvm.objects.get_or_create(**data)
-        # try:
-        #     Nectarvm.objects.get_or_create(**data)
-        # except Exception as err:
-        #     logger.error('Failed to record configuration of instance %s, product number=%s, detail: %s',
-        #                  usage,
-        #                  self.configuration.product_no,
-        #                  err)
