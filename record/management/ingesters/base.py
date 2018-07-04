@@ -1,7 +1,6 @@
 import logging
 from django.core.exceptions import ObjectDoesNotExist
 
-from utils import dict_to_object
 from ...models import Orderline, Product, Fee
 from ..utils.contract_helper import sort_composed_identifers, build_complex_identifer
 from ..utils import get_json
@@ -256,18 +255,6 @@ class UsageIngester:
         """
         return getattr(usage, field_name)
 
-    def calculate_fee(self, usage, start, end):
-        fee = 0
-        for product_no in self.billing_items:
-            # Product of Miscellaneous Charges is pseudo should not be a part of calculation
-            assert self.billing_items[product_no]['type'] != 'Miscellaneous Charges'
-            if self.billing_items[product_no]['type'] == 'Flat Fees':
-                fee = fee + self._get_price_of(product_no, usage.orderline.order.price_list, start, end)
-            else:
-                fee = fee + self._get_price_of(product_no, usage.orderline.order.price_list, start, end) \
-                    * self.get_fee_field_value(usage, self.billing_items[product_no]['field'])
-        return fee
-
     def save_config(self, orderline, usage):
         raise NotImplementedError
 
@@ -292,7 +279,18 @@ class UsageIngester:
         return data
 
     def get_usage(self, start, end):
+        """Get usage data for fee calculation"""
+        # Raw usage data is not necessary the same as the data
+        # for fee calculation or in the same units. So it is
+        # those classes to implement this
         raise NotImplementedError
+
+    def get_usage_of(self, orderline_id, start, end):
+        """Get usage data for fee calculation for an orderline"""
+        try:
+            return self.get_usage(start, end).filter(orderline_id=orderline_id).select_related('orderline')[0]
+        except IndexError:
+            return {}
 
     def save(self, start, end, orderline, usage, calculate_fee=False):
         """Save a usage entry, calculate fee when is needed"""
@@ -300,18 +298,31 @@ class UsageIngester:
         # nectar is typical
         try:
             self.save_config(orderline, usage)
-            saved_data = self.save_usage(orderline, start, end, usage)
+            self.save_usage(orderline, start, end, usage)
             if calculate_fee:
-                fake_usage_instance = dict_to_object(saved_data)
-                fake_usage_instance.orderline = orderline
-                fee = self.calculate_fee(fake_usage_instance, start, end)
+                # Some sources has not so straight way to getting usage data
+                # for example, nectarvm. See NectarvmIngester
+                fee = self.calculate_fee(self.get_usage_of(orderline.id, start, end), start, end)
                 Fee.objects.get_or_create(orderline=orderline, start=start, end=end, amount=fee)
             logger.debug('Ingested %s', usage)
         except ObjectDoesNotExist as err:
             logger.warning('%s: %s', str(err), str(usage))
         except Exception as err:
-            logger.error('%s %s %s', err, usage, orderline)
             logger.exception(err)
+            logger.error('Local variables: usage=%s, orderline=%s', usage, orderline)
+
+    def calculate_fee(self, usage, start, end):
+        """Calculate fee for a single usage record"""
+        fee = 0
+        for product_no in self.billing_items:
+            # Product of Miscellaneous Charges is pseudo should not be a part of calculation
+            assert self.billing_items[product_no]['type'] != 'Miscellaneous Charges'
+            if self.billing_items[product_no]['type'] == 'Flat Fees':
+                fee = fee + self._get_price_of(product_no, usage.orderline.order.price_list, start, end)
+            else:
+                fee = fee + self._get_price_of(product_no, usage.orderline.order.price_list, start, end) \
+                    * self.get_fee_field_value(usage, self.billing_items[product_no]['field'])
+        return fee
 
     def calculate_fees(self, start, end):
         """Calculate fees for a period from a usage table"""
