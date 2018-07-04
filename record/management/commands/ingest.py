@@ -144,9 +144,13 @@ class Command(BaseCommand):
                                usage[usage_config.orderline_linker])
                 continue
             contract = contract_indexer[usage[usage_config.orderline_linker]]
-            contract.update(usage)
+            # in nectarvm, manager appears in usage data as it has been processed
+            # so cannot update using usage, and usage data better not touched
+            # there may be some better ways
+            augmented_contract = usage.copy()
+            augmented_contract.update(contract)
 
-            extractor = Extractor(contract)
+            extractor = Extractor(augmented_contract)
             try:
                 manager_info = extractor.get_manager()
                 contact = contact_helper.get(manager_info['email'])
