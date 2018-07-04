@@ -11,13 +11,10 @@ from django.db.utils import IntegrityError
 from record.models import Account, Contact, Product, Order, Orderline
 
 from .. import LOG_FORMAT, SAN_MS_DATE
-# from record.management.importers import Importer
-from ..utils import prepare_command
+from ..utils.command_helper import prepare_command
 from ..utils.account_helper import AccountHelper
 from ..utils.contact_helper import ContactHelper
-from ..utils.contract_helper import Extractor, create_contract_dict, ProductSubstitute
-from ..ingesters.base import UsageConfiguration
-from .. import ingesters
+from ..utils.contract_helper import Extractor, create_contract_dict
 
 logger = logging.getLogger('record.management')
 
@@ -99,18 +96,22 @@ class Command(BaseCommand):
         parser.add_argument('-t', '--type',
                             default='tangocloudvm',
                             choices=['tangocloudvm', 'nectarvm', 'xfs', 'hcp', 'hnasvv', 'hnasfs', 'hpc'],
-                            help='Type of ingestion, should match to class name but case insensitive')
+                            help='Type of record to be ingested, should match to class name but case insensitive')
         parser.add_argument('--substitutes-json', help='Path to JSON file downloaded from CRM for product substitutions, optional')
+        parser.add_argument('--fee', dest='calculate_fee', action='store_true', help='Calculate fee after ingest, default value')
+        parser.add_argument('--no-fee', dest='calculate_fee', action='store_false', help='Don not calculate fee after ingest')
+        parser.set_defaults(calculate_fee=True)
 
-    @staticmethod
-    def _get_ingester(normalized_service_name):
-        # normalized_service_name: prefix of an ingester class which has suffix Ingester
-        return getattr(ingesters, normalized_service_name + 'Ingester')
+    # @staticmethod
+    # def _get_ingester(normalized_service_name):
+    #     # normalized_service_name: prefix of an ingester class which has suffix Ingester
+    #     return getattr(ingesters, normalized_service_name + 'Ingester')
 
     def handle(self, *args, **options):
+        # step 1: get an ingest class instance
         try:
-            service, min_date, max_date, service_config = prepare_command(options)
-        except Exception as err:
+            ingester, min_date, max_date, service_config = prepare_command(options)
+        except (KeyError, Exception) as err:
             self.stderr.write(err)
             sys.exit(1)
 
@@ -121,35 +122,18 @@ class Command(BaseCommand):
             logger.error('Product cannot be found: its number is %s. Detail: %s', product_no, err)
             sys.exit(1)
 
-        # load helper data first
-        account_helper = AccountHelper(options['account_json'])
-        contact_helper = ContactHelper(options['contact_json'])
-        # product substitutes
-        if options['substitutes_json']:
-            substitutes = ProductSubstitute()
-            substitutes.load_from_file(options['substitutes_json'])
-        else:
-            substitutes = None
-
-        # Make contracts availabe for later use
-        crm_config = service_config['CRM']
-        product_no = service_config['product-no']
-        usage_config = UsageConfiguration(product_no, service_config['USAGE'])
-
-        # step 1: get usage data
-        try:
-            ingester_class = self._get_ingester(service)
-        except KeyError:
-            self.stderr.write('Cannot load ingester class by its prefix %s' % service)
-            sys.exit(1)
-
-        ingester = ingester_class(usage_config, substitutes)
-
-        msg = 'About to ingest usage data and contracts between %s - %s for service %s (%s) into the database' % (min_date, max_date, service, product_no)
+        msg = 'About to ingest usage data and contracts of %s between %s - %s by %s' \
+              % (service_config['product-no'], min_date, max_date, type(ingester).__name__)
         logger.debug(msg)
         self.stdout.write(msg)
 
         # step 2: make contract info ready for creating Order, Orderline
+        # load helper data first
+        account_helper = AccountHelper(options['account_json'])
+        contact_helper = ContactHelper(options['contact_json'])
+
+        usage_config = ingester.configuration
+        crm_config = service_config['CRM']
         contract_indexer = create_contract_dict(crm_config['url'], crm_config['identifier'])
         usages = ingester.get_data(min_date, max_date)
         for usage in usages:
@@ -183,8 +167,8 @@ class Command(BaseCommand):
             order_values = extractor.get_order()
             # any account can be a biller
             biller = parent_account if parent_account.name == extractor.get_biller() else child_account
-            assert biller != None
-            assert manager != None
+            assert biller is not None
+            assert manager is not None
             order_values['biller'] = biller
             order_values['manager'] = manager
             try:
@@ -216,7 +200,7 @@ class Command(BaseCommand):
 
             # step 6: create usage, fee
             try:
-                ingester.save(min_date, max_date, orderline, usage, False)
+                ingester.save(min_date, max_date, orderline, usage, options['calculate_fee'])
             except Exception as err:
                 logger.error('Cannot save data into usage table for %s. Error: %s', usage, str(err))
                 logger.exception(err)

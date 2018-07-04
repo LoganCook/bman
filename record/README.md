@@ -54,6 +54,10 @@ python manage.py load_prices_products someurl/bman/api/pricelist/ -d 20160101 --
 # preferred and the only way for  getting nectar. the above commands are being deprecated
 python manage.py ingest -c config_nectar.json -t nectarvm -s 20180101 -e 20180131 --account-json ../ersa_accounts_20180501.json --contact-json ../ersa_contacts_20180605.json --settings=runner.record
 ```
+#### Command arguments:
+1. fee/no-fee: ingest usage data and their contracts but do not calculate fees.
+   This is useful when gathering usage data more frequently than billing.
+
 ```python
 # make composed product:
 from record.models import Product
