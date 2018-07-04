@@ -25,12 +25,12 @@ class Nectarvm(models.Model):
     date = models.IntegerField(default=int(datetime.datetime.now().timestamp()))
 
     def __str__(self):
-        return '%s: %s, %d, %d, %d, %d, %d' % (self.server_id, self.server, self.vcpus, self.ram, self.disk, self.ephemeral, self.date)
+        return '%s: %d, %d, %d, %d, %d' % (self.server, self.vcpus, self.ram, self.disk, self.ephemeral, self.date)
 
     @classmethod
     def get_default_fields(cls):
         # some fields are not on the default list
-        return ('server_id', 'server', 'vcpus', 'ram', 'disk', 'ephemeral')
+        return ('server', 'vcpus', 'ram', 'disk', 'ephemeral')
 
     @classmethod
     def get(cls, start, end):
