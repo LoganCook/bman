@@ -10,18 +10,13 @@ from django.db.utils import IntegrityError
 
 from record.models import Account, Contact, Product, Order, Orderline
 
-from .. import LOG_FORMAT, SAN_MS_DATE
-from ..utils.command_helper import prepare_command
+from ..utils.command_helper import prepare_command, setup_logger
 from ..utils.account_helper import AccountHelper
 from ..utils.contact_helper import ContactHelper
 from ..utils.contract_helper import Extractor, create_contract_dict
 
+setup_logger(__name__)
 logger = logging.getLogger('record.management')
-
-log_handler = logging.StreamHandler()
-log_handler.setFormatter(logging.Formatter(fmt=LOG_FORMAT, datefmt=SAN_MS_DATE))
-logger.addHandler(log_handler)
-logger.setLevel(logging.DEBUG)
 
 
 def create_top_account(name, dynamics_id):

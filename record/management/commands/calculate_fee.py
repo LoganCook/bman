@@ -7,8 +7,9 @@ import logging
 
 from django.core.management.base import BaseCommand
 
-from ..utils.command_helper import prepare_command
+from ..utils.command_helper import prepare_command, setup_logger
 
+setup_logger(__name__)
 logger = logging.getLogger('record.management')
 
 

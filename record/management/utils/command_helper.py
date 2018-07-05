@@ -8,10 +8,17 @@ from .contract_helper import ProductSubstitute
 from ..ingesters.base import UsageConfiguration
 
 logger = logging.getLogger('record.management')
-log_handler = logging.StreamHandler()
-log_handler.setFormatter(logging.Formatter(fmt=LOG_FORMAT, datefmt=SAN_MS_DATE))
-logger.addHandler(log_handler)
-logger.setLevel(logging.DEBUG)
+
+
+def setup_logger(module_name):
+    """Setup logger for record.management package"""
+    # Do I need it to be configurable?
+    root = module_name.split('.')[-1]
+    # log_handler = logging.StreamHandler()
+    log_handler = logging.handlers.RotatingFileHandler('%s.log' % root, maxBytes=30000000)
+    log_handler.setFormatter(logging.Formatter(fmt=LOG_FORMAT, datefmt=SAN_MS_DATE))
+    logger.addHandler(log_handler)
+    logger.setLevel(logging.DEBUG)
 
 
 def read_conf(path):
