@@ -199,6 +199,10 @@ class UsageIngester:
                 # self.configuration.fee_field is optional
                 # currently fee_field and composition_map are exclusive - 20180627
                 self.billing_items[main_product.no] = {'type': main_product.type, 'field': self.configuration.fee_field}
+            # sanity check
+            for product_no in self.billing_items:
+                    # Product of Miscellaneous Charges is pseudo should not be a part of calculation
+                    assert self.billing_items[product_no]['type'] != 'Miscellaneous Charges'
         else:
             self.billing_items = {product_no: {'type': main_product.type, 'field': self.configuration.fee_field}}
 
@@ -315,8 +319,6 @@ class UsageIngester:
         """Calculate fee for a single usage record"""
         fee = 0
         for product_no in self.billing_items:
-            # Product of Miscellaneous Charges is pseudo should not be a part of calculation
-            assert self.billing_items[product_no]['type'] != 'Miscellaneous Charges'
             if self.billing_items[product_no]['type'] == 'Flat Fees':
                 fee = fee + self._get_price_of(product_no, usage.orderline.order.price_list, start, end)
             else:

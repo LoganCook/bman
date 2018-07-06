@@ -58,6 +58,7 @@ def prepare_command(options):
     if options['substitutes_json']:
         substitutes = ProductSubstitute()
         substitutes.load_from_file(options['substitutes_json'])
+        logger.debug('substitutes-json file path: %s', options['substitutes_json'])
     else:
         substitutes = None
 
