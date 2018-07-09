@@ -14,6 +14,15 @@ from record.models import Product
 from record.management.ingesters.base import UsageIngester
 
 
+class MockResponse:
+    def __init__(self, json_data, status_code):
+        self.json_data = json_data
+        self.status_code = status_code
+
+    def json(self):
+        return self.json_data
+
+
 class UtilsTestCase(TestCase):
     def test_get_hierarchy(self):
         essential_fields = ('name', 'accountid')
@@ -83,6 +92,27 @@ class UtilsTestCase(TestCase):
             self.assertTrue(field in child)
         self.assertTrue('parent_id' in child)
 
+    def test_get_json_cannot_connect(self):
+        with patch('record.management.utils.requests.get') as patched_get:
+            patched_get.side_effect = requests.exceptions.ConnectionError('Mocked connection failed')
+            with self.assertRaises(RuntimeError) as cm:
+                get_json('someurl')
+            self.assertTrue(str(cm.exception).startswith('Cannot connect to'))
+
+    def test_get_json_timeout(self):
+        with patch('record.management.utils.requests.get') as patched_get:
+            patched_get.side_effect = requests.exceptions.ReadTimeout('Mocked time out passed')
+            with self.assertRaises(RuntimeError) as cm:
+                get_json('someurl')
+            self.assertTrue(str(cm.exception).startswith('Timeout when accessing url'))
+
+    def test_get_json_404(self):
+        with patch('record.management.utils.requests.get') as patched_get:
+            patched_get.return_value = MockResponse({}, 404)
+            with self.assertRaises(RuntimeError) as cm:
+                get_json('someurl')
+            self.assertIn('404', str(cm.exception))
+
 
 class CommandsTestCase(TestCase):
     def setUp(self):
@@ -108,11 +138,3 @@ class CommandsTestCase(TestCase):
         self.assertIn('product-no', service_config)
         self.assertIn('CRM', service_config)
         self.assertIn('USAGE', service_config)
-
-class RequestsTestCase(TestCase):
-    def test_timeout(self):
-        with patch('record.management.utils.requests.get') as patched_get:
-            patched_get.side_effect = requests.exceptions.ReadTimeout('Mocked time out passed')
-            with self.assertRaises(requests.exceptions.ReadTimeout) as cm:
-                get_json('someurl')
-            print(cm.exception)

@@ -124,13 +124,21 @@ class Command(BaseCommand):
 
         # step 2: make contract info ready for creating Order, Orderline
         # load helper data first
+        logger.info('Account helper json=%s', options['account_json'])
         account_helper = AccountHelper(options['account_json'])
+
+        logger.info('Contact helper json=%s', options['contact_json'])
         contact_helper = ContactHelper(options['contact_json'])
 
         usage_config = ingester.configuration
         crm_config = service_config['CRM']
-        contract_indexer = create_contract_dict(crm_config['url'], crm_config['identifier'])
-        usages = ingester.get_data(min_date, max_date)
+        try:
+            contract_indexer = create_contract_dict(crm_config['url'], crm_config['identifier'])
+            usages = ingester.get_data(min_date, max_date)
+        except RuntimeError as err:
+            logger.error('Cannot get necessary data: %s', str(err))
+            sys.exit(1)
+
         for usage in usages:
             # step 3: use identifiers from CRM and usage to create a super data structure
             if usage[usage_config.orderline_linker] not in contract_indexer:
@@ -159,7 +167,7 @@ class Command(BaseCommand):
                 else:
                     manager = create_contact(manager_info['name'], manager_info['email'], manager_info['contactid'], parent_account)
             except (KeyError, NameError) as err:
-                logger.error('%s, %s', str(err), str(contract))
+                logger.error('Cannot get %s. Check helper JSONs. Current contract: %s', str(err), str(contract))
                 continue
 
             # step 4: create Order

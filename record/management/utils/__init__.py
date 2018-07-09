@@ -18,17 +18,14 @@ def get_json(url, params=None, headers=None, verify_ssl=True, timeout=10):
         logger.debug('Get json data from %s with params = %s', url, params)
         resp = requests.get(url, params=params, headers=headers, verify=verify_ssl, timeout=timeout)
     except requests.exceptions.ConnectionError as error:
-        logger.error('Cannot connect to %s, detail: %s', url, error)
-        return None
+        raise RuntimeError('Cannot connect to %s, detail: %s' % (url, error))
     except requests.exceptions.ReadTimeout:
-        logger.error('Timeout when accessing url=%s', url)
-        raise
+        raise RuntimeError('Timeout when accessing url=%s' % url)
 
     status_code = resp.status_code
 
     if status_code == 404:
-        logger.info('Accessing %s returned 404: no data or wrong url', url)
-        return None  # TODO is this appropriate? Maybe should raise an exception?
+        raise RuntimeError('Accessing %s returned 404: no data or wrong url' % url)
 
     if status_code != 200:
         raise RuntimeError('Accessing %s failed: status code: %d' % (url, status_code))
