@@ -1,10 +1,14 @@
 # python manage.py test record.test_utils --settings=runner.record
 
+from unittest.mock import patch
+
 from django.test import TestCase
+
+import requests
 
 from date_helpers import date_string_to_timestamp
 
-from record.management.utils import get_hierarchy
+from record.management.utils import get_hierarchy, get_json
 from record.management.utils.command_helper import prepare_command
 from record.models import Product
 from record.management.ingesters.base import UsageIngester
@@ -104,3 +108,11 @@ class CommandsTestCase(TestCase):
         self.assertIn('product-no', service_config)
         self.assertIn('CRM', service_config)
         self.assertIn('USAGE', service_config)
+
+class RequestsTestCase(TestCase):
+    def test_timeout(self):
+        with patch('record.management.utils.requests.get') as patched_get:
+            patched_get.side_effect = requests.exceptions.ReadTimeout('Mocked time out passed')
+            with self.assertRaises(requests.exceptions.ReadTimeout) as cm:
+                get_json('someurl')
+            print(cm.exception)
