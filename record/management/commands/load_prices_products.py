@@ -2,16 +2,17 @@
 Ingest usage json created by reporting-unified.usage
 """
 
-# import logging
+import logging
 
 from django.core.management.base import BaseCommand
-
-# TODO: make all commands use a shared logging method
-# from .. import LOG_FORMAT, SAN_MS_DATE
 
 from date_helpers import date_string_to_timestamp
 from record.models import Product, Price
 from ..utils import get_json
+from ..utils.command_helper import setup_logger
+
+setup_logger(__name__)
+logger = logging.getLogger('record.management')
 
 
 class Command(BaseCommand):
@@ -73,6 +74,6 @@ class Command(BaseCommand):
 
         for price in prices:
             for field in fields:
-                print(field, ':', price[field])
+                logger.info('%s: %s', field, price[field])
             current_product = create_product(price)
             create_price(price, current_product, valid_ts)

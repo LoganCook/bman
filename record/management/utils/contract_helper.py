@@ -58,14 +58,6 @@ class Extractor(object):
         assert('biller' in self.content and 'managerunit' in self.content)
         return self.content['biller'], self.content['managerunit']
 
-    # FIXME: to be removed
-    def get_contact(self):
-        return {
-            'name': self.content['manager'],
-            'email': self.content['manageremail'],
-            'accounts': (self.content['biller'], self.content['managerunit'])
-        }
-
     def get_biller(self):
         assert 'biller' in self.content
         return self.content['biller']

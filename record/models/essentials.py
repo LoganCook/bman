@@ -85,9 +85,7 @@ class Account(models.Model):
 
 class Contact(models.Model):
     """Contact, a person"""
-    # FIXME: contract does not have dynamics_id for Contact
-    # dynamics_id = models.CharField(max_length=32, null=False, blank=False)
-    dynamics_id = models.CharField(max_length=32)
+    dynamics_id = models.CharField(max_length=32, null=False, blank=False)
     account = models.ForeignKey(Account)
     name = models.CharField('full name', max_length=100, null=False, blank=False)
     email = models.EmailField('email address', null=False, blank=False)
@@ -125,7 +123,6 @@ class Manager(models.Model):
 
     @classmethod
     def get_managed_account_id(cls, email):
-        # TODO: to review, currently only used in views.tango_temp
         try:
             return cls.objects.get(contact__email=email).account_id
         except cls.DoesNotExist:
@@ -233,9 +230,6 @@ class Orderline(models.Model):
     identifier: a token links this purchase record to usage data and for
                 further grouping
     """
-    # FIXME: contract does not have dynamics_id for Orderline
-    # dynamics_id = models.CharField(max_length=32, null=False)
-    dynamics_id = models.CharField(max_length=32)
     order = models.ForeignKey(Order)
     product = models.ForeignKey(Product)
     quantity = models.IntegerField()
@@ -254,7 +248,7 @@ class Orderline(models.Model):
         unique_together = ("order", "product", "identifier")
 
     def __str__(self):
-        return '%s %s %s %s %d %.2f' % (self.dynamics_id, self.order.name, self.product.name, self.identifier, self.quantity, self.price)
+        return '%s %s %s %d %.2f' % (self.order.name, self.product.name, self.identifier, self.quantity, self.price)
 
     @classmethod
     def get_by_product_no(cls, product_no):

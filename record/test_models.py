@@ -96,11 +96,11 @@ class OrderTestCase(TestCase):
         order = Order.objects.get(name='test order')
         demo_product, _ = Product.objects.get_or_create(name='demo product', dynamics_id=DUMMY_DYNAMICS_ID)
         # There can be more lines for the same product
-        Orderline.objects.create(order=order, dynamics_id=DUMMY_DYNAMICS_ID, product=demo_product, quantity=1, price=1, identifier='identifier1')
-        Orderline.objects.create(order=order, dynamics_id=DUMMY_DYNAMICS_ID, product=demo_product, quantity=1, price=10, identifier='identifier2')
+        Orderline.objects.create(order=order, product=demo_product, quantity=1, price=1, identifier='identifier1')
+        Orderline.objects.create(order=order, product=demo_product, quantity=1, price=10, identifier='identifier2')
 
         another_product, _ = Product.objects.get_or_create(name='demo product 2', dynamics_id=DUMMY_DYNAMICS_ID)
-        Orderline.objects.create(order=order, dynamics_id=DUMMY_DYNAMICS_ID, product=another_product, quantity=1, price=10, identifier='identifier2')
+        Orderline.objects.create(order=order, product=another_product, quantity=1, price=10, identifier='identifier2')
 
         orderlines = order.orderlines
         self.assertEqual(3, len(orderlines))
@@ -141,7 +141,7 @@ class TangocloudvmTestCase(TestCase):
         with open('record/TangoCloudUsage.json', 'r') as jf:
             self.vms = json.load(jf)
         for vm in self.vms:
-            orderline = Orderline.objects.create(order=order, dynamics_id=DUMMY_DYNAMICS_ID, product=self.product, quantity=1, price=1, identifier=vm['id'])
+            orderline = Orderline.objects.create(order=order, product=self.product, quantity=1, price=1, identifier=vm['id'])
             Tangocloudvm.objects.create(orderline=orderline,
                                         server_id=vm['id'],
                                         server=vm['server'],

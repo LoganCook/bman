@@ -178,9 +178,6 @@ class UsageIngester:
         :param ProductSubstitute substitutes: helper of checking complex product.
         """
         self.configuration = usage_conf
-        # TODO: how to cache properly? current one will mess up with orders with different price lists
-        self.single_price = -1
-        self.composed_prices = {}
         product_no = self.configuration.product_no
         main_product = Product.get_by_no(product_no)
 
@@ -221,12 +218,6 @@ class UsageIngester:
         finder = Product.get_by_no(product_no).get_price_finder()
         yearly = finder.get_price(list_name, start, end)
         return yearly * (end - start) / 31536000
-
-    def _get_price(self, list_name, start, end):
-        # FIXME: does not respect list_name in cache
-        if self.single_price < 0:
-            self.single_price = self._get_price_of(self.configuration.product_no, list_name, start, end)
-        return self.single_price
 
     def _build_orderline_identifer(self, usage):
         """Extract field values by a list of names and concat to a string by comma"""

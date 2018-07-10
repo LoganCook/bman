@@ -22,11 +22,8 @@ class AccountHelper(object):
         return {'name': entity['name'], 'dynamics_id': entity['accountid']}
 
     def get_accounts(self, linked_account_names):
-        """Find two accounts: parent and child by their names
-
-        The return structure can be used to create record.Account instance
-        """
-        # FIXME: it cannot handle admin is not in the same organization: "orderID": "FUSA0159"
+        """Find two accounts: parent and child by their names"""
+        # it cannot handle admin is not in the same organization: "orderID": "FUSA0159"
         # managerUnit is from eRSA, biller is Flinders
 
         assert len(linked_account_names) == 2
