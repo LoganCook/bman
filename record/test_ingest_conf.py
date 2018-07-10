@@ -98,3 +98,15 @@ class TestConf(unittest.TestCase):
         usage_data = {'usage2': '2', 'usage1': '1', 'other': '0', 'id': 'idFirst'}
         identifer = usage_conf.create_orderline_identifer(usage_data)
         self.assertEqual('idFirst,1,2', identifer)
+
+    def test_timeout(self):
+        conf_dict_copy = self.conf_dict.copy()
+        # Make it a proper configuration with only composition
+        del conf_dict_copy['composition']
+        usage_conf = UsageConfiguration('demo', conf_dict_copy)
+        # default is 10
+        self.assertEqual(10, usage_conf.timeout)
+
+        conf_dict_copy['original-data']['timeout'] = 300
+        usage_conf = UsageConfiguration('demo', conf_dict_copy)
+        self.assertEqual(300, usage_conf.timeout)

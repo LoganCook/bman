@@ -69,6 +69,7 @@ class UsageConfiguration:
 
     It can also have:
     fee-field or composition for mapping composing product numbers to usage data fields for calculating fee
+    timeout for setting extra long timeout in seconds, default is 10
     """
     def __init__(self, prod_no, conf):
         # a configuration
@@ -103,6 +104,13 @@ class UsageConfiguration:
         if 'headers' in self.configuration['original-data']:
             return self.configuration['original-data']['headers']
         return None
+
+    @property
+    def timeout(self):
+        """Timeout of response from data endpoints, default = 10 seconds"""
+        if 'timeout' in self.configuration['original-data']:
+            return self.configuration['original-data']['timeout']
+        return 10
 
     @property
     def fields(self):
@@ -220,15 +228,6 @@ class UsageIngester:
             self.single_price = self._get_price_of(self.configuration.product_no, list_name, start, end)
         return self.single_price
 
-    # def _get_prices(self, list_name, start, end):
-    #     # TODO: not used, to be removed?
-    #     assert self.is_complex_product
-    #     if not self.composed_prices or list_name not in self.composed_prices:
-
-    #         for (prod_no, field) in self.configuration.composition_map.items():
-    #             self.composed_prices[field] = self._get_price_of(prod_no, list_name, start, end)
-    #     return self.composed_prices
-
     def _build_orderline_identifer(self, usage):
         """Extract field values by a list of names and concat to a string by comma"""
         return ','.join([str(usage[field]) for field in self.configuration.orderline_identifier_list])
@@ -247,7 +246,7 @@ class UsageIngester:
     def get_data(self, start, end):
         # tangovm - vms only has monthly data, in database, there is only the start of month, so we cannot do partial monthly report
         args = {'start': start, 'end': end}
-        return get_json(self.configuration.url, args, self.configuration.headers)
+        return get_json(self.configuration.url, args, self.configuration.headers, timeout=self.configuration.timeout)
 
     # def get_product_substitutes(self):
     #     return self.product_substitutes.get_substitutes(self.configuration.product_no)

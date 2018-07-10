@@ -88,7 +88,8 @@ is the `service-base-class-name`, the three classes should be:
         "url": "http://source-data-url",
         "headers": {
           "x-header-name": "some value"
-        }
+        },
+        "timeout": 10
       },
       "fields": {
         "orginal-field-name1": "map to field name",
