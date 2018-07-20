@@ -34,21 +34,6 @@ class StorageUsage(Usage):
     def get_default_fields(cls):
         return super().get_default_fields() + ('usage', )
 
-    # @classmethod
-    # def create_base_qs(cls, start, end):
-    #     return super().create_base_qs(start, end).prefetch_related('storage_set')
-
-    # @classmethod
-    # def fetch_related(cls, orderline_qs):
-    #     def extract_config(orderline):
-    #         return orderline.storage_set.values(*Storage.get_default_fields())[0]
-
-    #     def sum_usage(orderline):
-    #         # only span can be summed, others have to be averaged
-    #         return orderline.storageusage_set.values('orderline_id').annotate(avgUsage=Avg('usage'))[0]
-
-    #     return super().fetch_related(orderline_qs, sum_usage, extract_config)
-
     @classmethod
     def get_extract_config_method(cls):
         return lambda orderline: orderline.storage_set.values(*Storage.get_default_fields())[0]

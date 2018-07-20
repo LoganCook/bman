@@ -319,7 +319,8 @@ class Usage(models.Model):
         prefetch_usage = Prefetch(cls.get_usage_set(), queryset=usage_qs)
 
         return Orderline.objects.filter(pk__in=orderline_id_qs).select_related('order__biller', 'order__manager__account').prefetch_related(prefetch_usage, prefetch_fee) \
-            .annotate(name=F('order__name'), account=F('order__biller__name'), unit=F('order__manager__account__name'), managerName=F('order__manager__name'), managerEmail=F('order__manager__email'))
+            .annotate(name=F('order__name'), no=F('order__no'), account=F('order__biller__name'),
+                      unit=F('order__manager__account__name'), managerName=F('order__manager__name'), managerEmail=F('order__manager__email'))
 
     @classmethod
     def get_extract_config_method(cls):
@@ -349,7 +350,8 @@ class Usage(models.Model):
                 result[value] = getattr(instance, value)
             return result
 
-        main_fields = 'name', 'account', 'unit', 'managerName', 'managerEmail', 'price', 'identifier'
+        # convert a queryset to a list of dict
+        main_fields = 'name', 'no', 'account', 'unit', 'managerName', 'managerEmail', 'price', 'identifier'
         extract_config = cls.get_extract_config_method()
         sum_usage = cls.get_sum_usage_method()
         results = []
