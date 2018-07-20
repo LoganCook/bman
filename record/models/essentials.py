@@ -366,6 +366,8 @@ class Usage(models.Model):
 
     @classmethod
     def create_fee_base_qs(cls, start, end):
+        #  this may have a problem: time ranges in Usage and Fee are independent
+        # TODO: check this
         return Fee.objects.filter(orderline_id__in=cls.objects.filter(
             start__gte=start, end__lte=end).values('orderline_id'))
 
@@ -396,3 +398,13 @@ class Fee(models.Model):
     @classmethod
     def get_default_fields(cls):
         return ('id', 'start', 'end', 'amount')
+
+    @classmethod
+    def summary(cls, start, end):
+        # TODO: check this - this may have a problem: time ranges in Usage and Fee are independent
+        # TODO: aggregate sum:
+        return Fee.objects.filter(start__gte=start, end__lte=end)\
+            .select_related('orderline__order__biller', 'orderline__order__manager__account', 'orderline__product') \
+            .annotate(account=F('orderline__order__biller__name'), unit=F('orderline__order__manager__account__name'),
+                      product=F('orderline__product__name'), totalAmount=Sum('amount')) \
+            .values('start', 'end', 'account', 'unit', 'product', 'totalAmount')

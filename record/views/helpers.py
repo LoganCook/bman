@@ -43,8 +43,13 @@ def verify_product_no(func):
     return wrapper
 
 
-def get_usage_class(product_no):
-    return getattr(_current_module, product_no.capitalize() + 'Usage')
+def get_usage_class(product_group):
+    """Get a usage class by product group name
+
+    Some product group has only one product, some has more
+    :param str product_group: name of usage class without Usage suffix
+    """
+    return getattr(_current_module, product_group.capitalize() + 'Usage')
 
 
 def get_timestamps_email(request, email_optional=False):
