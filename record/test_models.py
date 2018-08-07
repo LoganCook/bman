@@ -12,6 +12,7 @@ from record.models.tango_vm import Tangocloudvm, TangocloudvmUsage
 DUMMY_DYNAMICS_ID = '8b3615e1-4afd-e611-810b-e0071b6685b1'
 PRICE_LIST_NAME = "Member's price"
 
+
 class AccountTestCase(TestCase):
     # Update these values when TEST_DATA_FILE has been changed
 

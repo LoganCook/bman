@@ -5,6 +5,8 @@ from ...models import Orderline, Product, Fee
 from ..utils.contract_helper import sort_composed_identifers, build_complex_identifer
 from ..utils import get_json
 
+# 3600 * 24 * 365 = 31536000
+YEAR_IN_SECONDS = 31536000
 
 logger = logging.getLogger(__name__)
 
@@ -213,11 +215,39 @@ class UsageIngester:
 
     @staticmethod
     def _get_price_of(product_no, list_name, start, end):
-        """Convert a yearly price from CRM to a price suits to the period"""
-        # converted through day: 3600 / 24 / 365 = 31536000
+        """Get a price from CRM suits to the usage between start
+           and end timestamps
+
+        Price list's effective start and end timestamps are identical
+        to usage duration. It calls _get_duration_price_of.
+
+        :param str product_no: production number defined in CRM
+        :param str list_name: price list name
+        :param int start: start timestamp of query period
+        :param int end: end timestamp of query period
+        :return: converted price
+        """
+        duration = end - start
+        return UsageIngester._get_duration_price_of(product_no, list_name, start, end, duration)
+
+    @staticmethod
+    def _get_duration_price_of(product_no, list_name, start, end, duration):
+        """Get a price from CRM suits for a duration of the usage between start
+           and end timestamps
+
+        It finds a price from list between start and end timestamps and converts
+        a yearly price suits for a duration .
+
+        :param str product_no: production number defined in CRM
+        :param str list_name: price list name
+        :param int start: start timestamp of query period
+        :param int end: end timestamp of query period
+        :param int duration: usage duration in seconds
+        :return: converted price
+        """
         finder = Product.get_by_no(product_no).get_price_finder()
         yearly = finder.get_price(list_name, start, end)
-        return yearly * (end - start) / 31536000
+        return yearly * duration / YEAR_IN_SECONDS
 
     def _build_orderline_identifer(self, usage):
         """Extract field values by a list of names and concat to a string by comma"""
@@ -311,9 +341,15 @@ class UsageIngester:
         for product_no in self.billing_items:
             if self.billing_items[product_no]['type'] == 'Flat Fees':
                 fee = fee + self._get_price_of(product_no, usage.orderline.order.price_list, start, end)
-            else:
+            elif self.billing_items[product_no]['type'] == 'Services':
                 fee = fee + self._get_price_of(product_no, usage.orderline.order.price_list, start, end) \
                     * self.get_fee_field_value(usage, self.billing_items[product_no]['field'])
+            elif self.billing_items[product_no]['type'] == 'Sales Inventory':
+                # Sales Inventory type
+                duration = self.get_fee_field_value(usage, self.billing_items[product_no]['field'])
+                fee = fee + self._get_duration_price_of(product_no, usage.orderline.order.price_list, start, end, duration)
+            else:
+                raise KeyError("Not supported product type for fee calculation: %s" % self.billing_items[product_no]['type'])
         return fee
 
     def calculate_fees(self, start, end):

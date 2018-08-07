@@ -2,11 +2,25 @@
 
 Product in Dynamics has four types (`producttypecode`) and this property will
 determine how the cost of an orderline is calculated:
-1: Sales Inventory: same as `services` type for backward compatibility.
-2: Miscellaneous Charges: pricing is done by its accessories not by itself.
+1. Sales Inventory: usage is accumulated time. For example, job run hours.
+1. Services: service usage is the maximal point usage and usage itself is not
+   time related but billing period is. Storage is one example of service.
+1. Flat Fees: fee is calculated by time used regardless of actual usage.
+1. Miscellaneous Charges: fee is calculated by its accessories not by itself.
    The product is only a pseudo product.
-3: Services: pricing is done by usage and time.
-4: Flat Fees: pricing is done by time used, not usage.
+
+| Product  | Type |
+| ------------- | ------------- |
+| HPC home storage | Flat Fees |
+| Additonal VM Storage | Services |
+| Attached Backup Storage | Services |
+| Attached Storage | Services |
+| Nectar Cloud VM | Flat Fees |
+| TANGO Cloud VM | Miscellaneous Charges |
+| TANGO VM CPU  - Not for sale | Services |
+| TANGO VM Memory – Not for sale | Services |
+| TANGO Compute | Sales Inventory |
+| eRSA Account | Sales Inventory |
 
 Product can have accessory products (defined as having substitutes by
 `salesrelationshiptype = Accessory` in entity `productsubstitute`. In
@@ -25,6 +39,9 @@ when calling an ingest command.
 ## Record usages and fees in intervals
 
 ### Notes:
+1. Prices in eRSA CRM are yearly rates: for example, one job runs for
+   a year, one GB (storage or memory) consumed for a year or a CPU
+   core used for a year.
 1. For Fees or Usages, they are not events but statistics in intervals.
    So the queries run against [start, end] of an interval using equal at both ends.
 1. Usage consists configuration of product and actual usage statistics. Usage
