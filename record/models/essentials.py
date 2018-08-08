@@ -204,13 +204,13 @@ class PriceFinder(object):
 
 class Order(models.Model):
     """Summary of purchases"""
-    dynamics_id = models.CharField(max_length=32, null=False)
-    name = models.CharField(max_length=200)
-    no = models.CharField(max_length=20, unique=True)
+    dynamics_id = models.CharField(max_length=32, default=None)
+    name = models.CharField(max_length=200, default=None)
+    no = models.CharField(max_length=20, unique=True, default=None)
     description = models.TextField()
     biller = models.ForeignKey(Account)
     manager = models.ForeignKey(Contact)
-    price_list = models.CharField(max_length=100)
+    price_list = models.CharField(max_length=100, default=None)
     record_date = models.IntegerField(null=True, default=int(datetime.datetime.now().timestamp()))  # timestamp, not sure if this is needed for what
 
     def __str__(self):
@@ -267,8 +267,8 @@ class Price(models.Model):
     date: when a price amount has changed
     """
     # productpricelevelid
-    dynamics_id = models.CharField(max_length=32, null=False)
-    list_name = models.CharField(max_length=100)
+    dynamics_id = models.CharField(max_length=32, default=None)
+    list_name = models.CharField(max_length=100, default=None)
     product = models.ForeignKey(Product)
     unit = models.CharField(max_length=20)
     amount = models.FloatField()

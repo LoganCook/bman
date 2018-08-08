@@ -1,6 +1,7 @@
 # python manage.py test record.test_models --settings=runner.record
 import datetime
 import json
+import django
 
 from django.test import TestCase
 
@@ -9,7 +10,7 @@ from record.models.tango_vm import Tangocloudvm, TangocloudvmUsage
 
 
 DUMMY_DYNAMICS_ID = '8b3615e1-4afd-e611-810b-e0071b6685b1'
-
+PRICE_LIST_NAME = "Member's price"
 
 class AccountTestCase(TestCase):
     # Update these values when TEST_DATA_FILE has been changed
@@ -80,20 +81,38 @@ class ProductTestCase(TestCase):
 
 class OrderTestCase(TestCase):
     manager_email = 'test.manager@ersa.edu.au'
-
-    def setUp(self):
-        biller = Account.objects.create(name='biller', dynamics_id=DUMMY_DYNAMICS_ID)
-        contact = Contact.objects.create(account_id=biller.pk, dynamics_id=DUMMY_DYNAMICS_ID, name='test manager', email=self.manager_email)
-        Order.objects.create(name='test order', dynamics_id=DUMMY_DYNAMICS_ID, biller=biller, manager=contact)
+    biller = Account.objects.create(name='biller', dynamics_id=DUMMY_DYNAMICS_ID)
+    contact = Contact.objects.create(account_id=biller.pk, dynamics_id=DUMMY_DYNAMICS_ID, name='test manager', email=manager_email)
+    order_content = {
+        "biller": biller,
+        "manager": contact,
+        "name": "test order",
+        "no": "unique eRSA order no",
+        "dynamics_id": DUMMY_DYNAMICS_ID,
+        "description": "description is optional",
+        "price_list": "Member's list"
+    }
 
     def test_create_order(self):
-        biller = Account.objects.get(name='biller')
-        order = Order.objects.get(name='test order')
-        self.assertEqual(order, biller.orders[0])
-        self.assertTrue(order.record_date > 1524712589)
+        for item in ('name', 'no', 'dynamics_id', 'price_list'):
+            removed = self.order_content.pop(item)
+            with django.db.transaction.atomic():
+                with self.assertRaises(django.db.utils.IntegrityError):
+                    Order.objects.create(**self.order_content)
+            self.order_content[item] = removed
+
+        order_created = Order.objects.create(**self.order_content)
+        for k, v in self.order_content.items():
+            self.assertEqual(v, getattr(order_created, k))
+
+    def test_order_no_uniqueness(self):
+        Order.objects.create(**self.order_content)
+        with self.assertRaises(django.db.utils.IntegrityError):
+            Order.objects.create(**self.order_content)
 
     def test_get_details(self):
-        order = Order.objects.get(name='test order')
+        order = Order.objects.create(**self.order_content)
+
         demo_product, _ = Product.objects.get_or_create(name='demo product', dynamics_id=DUMMY_DYNAMICS_ID)
         # There can be more lines for the same product
         Orderline.objects.create(order=order, product=demo_product, quantity=1, price=1, identifier='identifier1')
@@ -109,13 +128,23 @@ class OrderTestCase(TestCase):
 
 
 class PriceTestCase(TestCase):
-    def test_price_of_one_product(self):
+    def test_price_basics(self):
         initial_price, final_price = 23.35, 25.35
         start_timestamp = int(datetime.datetime.now().timestamp())
         span_in_seconds = 100
         demo_product = Product.objects.create(name='demo product', dynamics_id=DUMMY_DYNAMICS_ID)
-        Price.objects.create(product=demo_product, list_name="Member's price", dynamics_id=DUMMY_DYNAMICS_ID, unit='GB', amount=initial_price, date=start_timestamp)
-        Price.objects.create(product=demo_product, list_name="Member's price", dynamics_id=DUMMY_DYNAMICS_ID, unit='GB', amount=final_price, date=start_timestamp + span_in_seconds)
+        Price.objects.create(product=demo_product, list_name=PRICE_LIST_NAME, dynamics_id=DUMMY_DYNAMICS_ID, unit='GB', amount=initial_price, date=start_timestamp)
+        Price.objects.create(product=demo_product, list_name=PRICE_LIST_NAME, dynamics_id=DUMMY_DYNAMICS_ID, unit='GB', amount=final_price, date=start_timestamp + span_in_seconds)
+
+        # dynamics_id is required
+        with django.db.transaction.atomic():
+            with self.assertRaises(django.db.utils.IntegrityError):
+                Price.objects.create(product=demo_product, list_name=PRICE_LIST_NAME, unit='GB', amount=initial_price, date=start_timestamp)
+
+        # list_name is required
+        with django.db.transaction.atomic():
+            with self.assertRaises(django.db.utils.IntegrityError):
+                Price.objects.create(product=demo_product, dynamics_id=DUMMY_DYNAMICS_ID, unit='GB', amount=final_price, date=start_timestamp + span_in_seconds)
 
         prices = demo_product.get_prices()
         self.assertEqual(2, len(prices))
@@ -134,7 +163,7 @@ class TangocloudvmTestCase(TestCase):
     def setUp(self):
         biller = Account.objects.create(name='biller', dynamics_id=DUMMY_DYNAMICS_ID)
         contact = Contact.objects.create(account_id=biller.pk, dynamics_id=DUMMY_DYNAMICS_ID, name='test manager', email='some@ersa.edu.au')
-        order = Order.objects.create(name='test order', dynamics_id=DUMMY_DYNAMICS_ID, biller=biller, manager=contact)
+        order = Order.objects.create(name='test order', no="unique eRSA no", description="description", dynamics_id=DUMMY_DYNAMICS_ID, biller=biller, manager=contact, price_list=PRICE_LIST_NAME)
         self.product = Product.objects.create(name='tangocloudvm', dynamics_id=DUMMY_DYNAMICS_ID)
 
         # data are from /vms/instance?end=1522502999&start=1519824600
