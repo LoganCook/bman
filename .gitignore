@@ -13,5 +13,4 @@ migrations/
 tags
 *.json
 *env
-*.dia
 *.sh
