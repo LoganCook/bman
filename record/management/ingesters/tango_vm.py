@@ -1,5 +1,7 @@
 import logging
 
+import django
+
 from ...models import Tangocloudvm, TangocloudvmUsage
 from .base import UsageIngester
 
@@ -23,4 +25,19 @@ class TangocloudvmIngester(UsageIngester):
         except KeyError as err:
             raise KeyError('Missing key %s in %s' % (err, usage))
 
-        Tangocloudvm.objects.get_or_create(**data)
+        # changing OS will not generate a new VM
+        try:
+            Tangocloudvm.objects.get_or_create(**data)
+        except django.db.utils.IntegrityError as err:
+            msg = str(err)
+            if msg.find('UNIQUE constraint failed') > -1:
+                # this just needs an update to handle OS change
+                logger.warning("UNIQUE constraint failed: tango_config=%s", data)
+                config = Tangocloudvm.objects.get(orderline_id=orderline.id)
+                for ori, target in self.configuration.orderline_configuration_map.items():
+                    value = getattr(config, target)
+                    if value != usage[ori]:
+                        setattr(config, target, usage[ori])
+                config.save()
+            else:
+                raise
