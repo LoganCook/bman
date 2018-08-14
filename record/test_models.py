@@ -1,4 +1,5 @@
 # python manage.py test record.test_models --settings=runner.record
+import random
 import datetime
 import json
 import django
@@ -181,8 +182,11 @@ class TangocloudvmTestCase(TestCase):
                                         business_unit=vm['businessUnit'])
         self.assertEqual(len(self.vms), Tangocloudvm.objects.count())
 
+    def get_a_vm(self):
+            return random.randrange(len(self.vms))
+
     def test_record_usage(self):
-        vm = self.vms[0]
+        vm = self.vms[self.get_a_vm()]
         orderline = Orderline.objects.get(identifier=vm['id'])
         start_timestamp, end_timestamp = 1522502999, 1519824600
         TangocloudvmUsage.objects.create(orderline=orderline,
@@ -213,7 +217,7 @@ class TangocloudvmTestCase(TestCase):
         self.assertEqual(2, Fee.of_product(self.product).count())
 
     def test_calculate_fee(self):
-        vm = self.vms[0]
+        vm = self.vms[self.get_a_vm()]
         orderline = Orderline.objects.get(identifier=vm['id'])
         start_timestamp, end_timestamp = 1522502999, 1519824600
         usages = TangocloudvmUsage.objects.filter(orderline=orderline)
