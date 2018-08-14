@@ -1,19 +1,15 @@
-import logging
-
 from date_helpers import month_to_start_end_timestamps
 
-from .helpers import (convert_qs, convert_list, verify_product_no, check_required_query_args,
-                      get_timestamps_email, unauthorized, get_usage_class)
-from ..models import (TangocloudvmUsage, NectarvmUsage, StorageUsage, HpcUsage, Contact)  # noqa # pylint: disable=unused-import
+from .helpers import (convert_qs, convert_list, verify_product_no,
+                      check_required_query_args, require_valid_email,
+                      get_timestamps_email, get_usage_class)
+from ..models import Contact
+from ..models.essentials import MANAGED_ACCOUNT_NOT_FOUND
 
-logger = logging.getLogger(__name__)
-
-
-# def yearly_usage(request, year):
-#     return JsonResponse({'timestamp': year_to_timestamp(year)})
 
 @check_required_query_args(('email', 'start', 'end'))
 @verify_product_no
+@require_valid_email
 def usage_list(request, product_no):
     """List usage of a product in a period defined by start and end"""
     start, end, email = get_timestamps_email(request)
@@ -22,40 +18,40 @@ def usage_list(request, product_no):
 
 @check_required_query_args(('email', ))
 @verify_product_no
+@require_valid_email
 def monthly_usage_list(request, product_no, year, month):
     """List usage of a product in a month of a year"""
     return _usage_list(request.GET['email'], product_no, *month_to_start_end_timestamps(year, month))
 
 
-@check_required_query_args(('email', 'start', 'end'))
+@check_required_query_args(('start', 'end', 'email'))
 @verify_product_no
-def usage_summary(request, product_no):
-    """List usage summary of a product in a period defined by start and end by orderline"""
-    start, end = get_timestamps_email(request, True)
-    return _usage_sum(product_no, start, end)
+@require_valid_email
+def usage_simple(request, product_no):
+    """List of all records of usage filtered by product_no only with their native fields"""
+    start, end, email = get_timestamps_email(request)
+    usage_class = get_usage_class(product_no)
+    deatil_qs = _qs_role_filter(email, usage_class.get(start, end))
+    return convert_qs(deatil_qs, usage_class.get_default_fields())
 
 
 def _usage_list(email, product_no, start, end):
-    """List of all records of Price with their native fields"""
-    try:
-        contact = Contact.get_by_email(email)
-    except Contact.DoesNotExist:
-        return unauthorized()
-
+    """List of all records of usage filtered by product_no with their native fields"""
     usage_class = get_usage_class(product_no)
-    if contact.is_admin:
-        orderline_qs = usage_class.create_base_qs(start, end)
-    else:
-        managed_account_id = contact.get_managed_account_id()
-        if managed_account_id:
-            orderline_qs = usage_class.create_base_qs(start, end).filter(order__biller_id=managed_account_id)
-        else:
-            orderline_qs = usage_class.create_base_qs(start, end).filter(order__manager__email=email)
-
+    orderline_qs = _qs_role_filter(email, usage_class.create_base_qs(start, end))
     return convert_list(usage_class.fetch_related(orderline_qs))
 
 
-def _usage_sum(product_no, start, end):
-    """List of all records of Price with their native fields"""
-    usage_class = get_usage_class(product_no)
-    return convert_qs(usage_class.get(start, end), usage_class.get_default_fields())
+def _qs_role_filter(email, usage_base_qs):
+    """Apply role filter to a query set
+
+    :param Queryset usage_base_qs: Queryset created by Usage.create_base_qs
+    """
+    contact = Contact.get_by_email(email)
+    managed_account_name = contact.get_managed_account_name()
+    if managed_account_name != MANAGED_ACCOUNT_NOT_FOUND:
+        usage_base_qs = usage_base_qs.filter(account=managed_account_name)
+    elif not contact.is_admin:
+        usage_base_qs = usage_base_qs.filter(managerEmail=email)
+
+    return usage_base_qs

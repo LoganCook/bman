@@ -14,6 +14,8 @@ _current_module = sys.modules[__name__]
 
 def supported_products():
     # only suport to views if a class in models package has Usage suffix
+    # these names known to outside as product_no, should not be
+    # confused as product number in product catalogue in CRM
     return [name.replace('Usage', '') for name
             in get_class_names(__name__.split('.')[0] + '.models')
             if name.endswith('Usage')]
@@ -23,18 +25,15 @@ VALID_PRODUCTS = supported_products()
 
 
 def verify_product_no(func):
-    """Verify a prodcut number of view functions before querying database
+    """Verify a prodcut_no of view functions before querying database
 
     If product_no is not in settings.PRODUCT_MAPPER return a 400 error
-    and a JSON object {'error': 'Invalid product number'}
+    and a JSON object {'error': 'Invalid product_no'}
     """
-
-    # url_part_to_product_no = lambda string_with_enderscore: string_with_enderscore.replace('_', ' ')
-
     @wraps(func)
     def wrapper(*args, **kwargs):
-        # the first positional argument is request, and the second is product_no
-        # kwargs['product_no'] = url_part_to_product_no(kwargs['product_no'])
+        # the first positional argument is request, and the rest are item generated
+        # by django: e.g. product_no
         kwargs['product_no'] = kwargs['product_no'].capitalize()
         if kwargs['product_no'] in VALID_PRODUCTS:
             return func(*args, **kwargs)
@@ -43,19 +42,21 @@ def verify_product_no(func):
     return wrapper
 
 
-def get_usage_class(product_group):
-    """Get a usage class by product group name
+def require_valid_email(func):
+    """Check if a request has a valid email address linked to known user or admin
 
-    Some product group has only one product, some has more
-    :param str product_group: name of usage class without Usage suffix
+    If failed, it returns a 401
     """
-    return getattr(_current_module, product_group.capitalize() + 'Usage')
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        try:
+            Contact.get_by_email(args[0].GET['email'])
+        except Contact.DoesNotExist:
+            return unauthorized()
 
+        return func(*args, **kwargs)
 
-def get_timestamps_email(request, email_optional=False):
-    if email_optional:
-        return request.GET['start'], request.GET['end']
-    return request.GET['start'], request.GET['end'], request.GET['email']
+    return wrapper
 
 
 def check_required_query_args(required_args):
@@ -68,12 +69,29 @@ def check_required_query_args(required_args):
         @wraps(func)
         def wrapper(*args, **kwargs):
             for required_arg in required_args:
-                if not required_arg in args[0].GET:
+                if required_arg not in args[0].GET:
                     return JsonResponse({'error': 'Missing required query arg: %s' % required_arg}, status=400)
             return func(*args, **kwargs)
 
         return wrapper
     return outer
+
+
+def get_usage_class(product_no):
+    """Get a usage class by product_no
+
+    Some product_no has only one product, some has more
+
+    :param str product_no: symbol known to outside of a product
+    or a family of product, internally, name of usage class without Usage suffix
+    """
+    return getattr(_current_module, product_no.capitalize() + 'Usage')
+
+
+def get_timestamps_email(request, email_optional=False):
+    if email_optional:
+        return request.GET['start'], request.GET['end']
+    return request.GET['start'], request.GET['end'], request.GET['email']
 
 
 def convert_qs(qs, fields):

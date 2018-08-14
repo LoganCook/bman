@@ -82,6 +82,8 @@ class Account(models.Model):
     def orders(self):
         return Order.objects.filter(biller_id=self.pk).all()
 
+# error message when a contact manages no account
+MANAGED_ACCOUNT_NOT_FOUND = "MANAGED ACCOUNT NOT FOUND"
 
 class Contact(models.Model):
     """Contact, a person"""
@@ -114,6 +116,13 @@ class Contact(models.Model):
             return Manager.objects.get(contact__email=self.email).account_id
         except Manager.DoesNotExist:
             return None
+
+    def get_managed_account_name(self):
+        """Get id of an Account current Contact managing"""
+        try:
+            return Manager.objects.get(contact__email=self.email).account.name
+        except Manager.DoesNotExist:
+            return MANAGED_ACCOUNT_NOT_FOUND
 
 
 class Manager(models.Model):
@@ -284,7 +293,11 @@ class Price(models.Model):
 
 
 class Usage(models.Model):
-    """Raw usage data of each product in period"""
+    """Abstract class of raw usage data of product(s)
+
+    Note: A Usage can have more than one Dynamics product under management.
+    There is no direct link between Dynamics products and Usage classes.
+    """
     start = models.IntegerField()
     end = models.IntegerField()
     orderline = models.ForeignKey(Orderline)
@@ -307,10 +320,13 @@ class Usage(models.Model):
 
     @classmethod
     def create_base_qs(cls, start, end):
-        """Create a base query to include fee and usage"""
-        # It needs fee and usage order
-        # derived class can add more prefetch_related if needed
+        """Create a base query to include fee and usage
 
+        Derived class can add more fields to prefetch_related if needed.
+
+        NOTE (WARNING): if Fee and Usage's time ranges are out of sync,
+        prefetch_fee will have no or wrong result
+        """
         usage_qs = cls.objects.filter(start__gte=start, end__lte=end)
         orderline_id_qs = usage_qs.distinct().values_list('orderline_id', flat=True)
         fee_qs = Fee.objects.filter(start__gte=start, end__lte=end, orderline_id__in=orderline_id_qs)
@@ -321,6 +337,18 @@ class Usage(models.Model):
         return Orderline.objects.filter(pk__in=orderline_id_qs).select_related('order__biller', 'order__manager__account').prefetch_related(prefetch_usage, prefetch_fee) \
             .annotate(name=F('order__name'), no=F('order__no'), account=F('order__biller__name'),
                       unit=F('order__manager__account__name'), managerName=F('order__manager__name'), managerEmail=F('order__manager__email'))
+
+    @classmethod
+    def create_fee_base_qs(cls, start, end):
+        """Get a fee list which can be used directly or as a base
+        for fee quires in views for a type of Usage"""
+        # This because Fee only knows product.no not product_no, aka prefix
+        # of Usage class, all fee queries has to be filtered first by Usage.
+        # Because Fee interval can only be bigger or equal to Usage interval,
+        # this filter should be considered as safe.
+        return Fee.objects.filter(orderline_id__in=cls.objects.filter(
+            start__gte=start, end__lte=end).distinct().values('orderline_id')) \
+            .filter(start__gte=start, end__lte=end)
 
     @classmethod
     def get_extract_config_method(cls):
@@ -359,21 +387,16 @@ class Usage(models.Model):
             result = extract_value(ol, main_fields)
             result.update(sum_fee(ol.fee_set))
             result.update(sum_usage(ol))
-            if callable(extract_config):
+            if extract_config and callable(extract_config):
                 result.update(extract_config(ol))
             results.append(result)
         return results
 
-    @classmethod
-    def create_fee_base_qs(cls, start, end):
-        #  this may have a problem: time ranges in Usage and Fee are independent
-        # TODO: check this
-        return Fee.objects.filter(orderline_id__in=cls.objects.filter(
-            start__gte=start, end__lte=end).values('orderline_id'))
-
 
 class Fee(models.Model):
     # bill can have different periods than usage data
+    # how product are linked? here we use product.no not product_no which comes
+    # from Usage class
     orderline = models.ForeignKey(Orderline)
     start = models.IntegerField()
     end = models.IntegerField()
@@ -384,10 +407,12 @@ class Fee(models.Model):
 
     @classmethod
     def of_product(cls, product, start=None, end=None):
+        # Not useful to views
         return cls.of_product_by_no(product.no, start, end)
 
     @classmethod
     def of_product_by_no(cls, product_no, start=None, end=None):
+        # Not useful to views
         qs = cls.objects.filter(orderline__product__no=product_no).order_by('start')
         if start:
             qs = qs.filter(start__gte=start)
@@ -400,11 +425,18 @@ class Fee(models.Model):
         return ('id', 'start', 'end', 'amount')
 
     @classmethod
-    def summary(cls, start, end):
-        # TODO: check this - this may have a problem: time ranges in Usage and Fee are independent
-        # TODO: aggregate sum:
-        return Fee.objects.filter(start__gte=start, end__lte=end)\
+    def create_summary_qs_base(cls, start, end):
+        """Create a query base of Fee summary of every usages"""
+        # View methods do not have knowledge of product.no, so
+        # it summarises everything
+        return cls.objects.filter(start__gte=start, end__lte=end) \
             .select_related('orderline__order__biller', 'orderline__order__manager__account', 'orderline__product') \
+
+    @classmethod
+    def summary(cls, qs_base):
+        """Package Fee summary query result"""
+        # TODO: aggregate sum:
+        return qs_base \
             .annotate(account=F('orderline__order__biller__name'), unit=F('orderline__order__manager__account__name'),
                       product=F('orderline__product__name'), totalAmount=Sum('amount')) \
             .values('start', 'end', 'account', 'unit', 'product', 'totalAmount')

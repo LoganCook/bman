@@ -1,11 +1,9 @@
 from django.http import JsonResponse
 from django.db.models import F, Prefetch, Sum, Avg
 
-from date_helpers import month_to_start_end_timestamps
 from ..models import Account, Manager, Order, Orderline, Fee, Tangocloudvm, TangocloudvmUsage
-from .helpers import convert_qs, cors_response, verify_product_no, get_timestamps_email
-from .fee import fee_all, fee_sum, fee_by_prod, fee_sum_by_prod
-from . import usage, price
+from .helpers import convert_qs, cors_response, get_timestamps_email
+from . import usage, fee, price  # noqa # pylint: disable=unused-import
 
 
 def account(request):
@@ -17,33 +15,6 @@ def contract(request):
     order_account_manager_qs = Order.objects.select_related('biller', 'manager__account') \
         .annotate(account=F('biller__name'), managerName=F('manager__name'), managerEmail=F('manager__email'), unit=F('manager__account__name'))
     return convert_qs(order_account_manager_qs, ('name', 'account', 'unit', 'managerName', 'managerEmail'))
-
-
-def fee_list(request):
-    start, end = get_timestamps_email(request, True)
-    return fee_all(start, end)
-
-
-def fee_summary(request):
-    start, end = get_timestamps_email(request, True)
-    return fee_sum(start, end)
-
-
-@verify_product_no
-def fee_by_prod_range(request, product_no):
-    start, end = get_timestamps_email(request, True)
-    return fee_by_prod(product_no, start, end)
-
-
-@verify_product_no
-def fee_summary_by_prod_range(request, product_no):
-    start, end = get_timestamps_email(request, True)
-    return fee_sum_by_prod(product_no, start, end)
-
-
-@verify_product_no
-def monthly_fee(request, product_no, year, month):
-    return fee_by_prod(product_no, *month_to_start_end_timestamps(year, month))
 
 
 def package_tango_data(orderlines_qs):
