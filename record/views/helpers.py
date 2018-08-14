@@ -58,6 +58,24 @@ def get_timestamps_email(request, email_optional=False):
     return request.GET['start'], request.GET['end'], request.GET['email']
 
 
+def check_required_query_args(required_args):
+    """Check if required query args present
+
+    If failed, it returns a 400 error and a JSON object
+    {'error': 'Missing required query args: blar'}
+    """
+    def outer(func):
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            for required_arg in required_args:
+                if not required_arg in args[0].GET:
+                    return JsonResponse({'error': 'Missing required query arg: %s' % required_arg}, status=400)
+            return func(*args, **kwargs)
+
+        return wrapper
+    return outer
+
+
 def convert_qs(qs, fields):
     """Convert a queryset to a JSON array response with selected fields"""
     # return as a JsonResponse with Access-Control-Allow-Origin header

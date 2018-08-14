@@ -2,7 +2,7 @@ import logging
 
 from date_helpers import month_to_start_end_timestamps
 
-from .helpers import (convert_qs, convert_list, verify_product_no,
+from .helpers import (convert_qs, convert_list, verify_product_no, check_required_query_args,
                       get_timestamps_email, unauthorized, get_usage_class)
 from ..models import (TangocloudvmUsage, NectarvmUsage, StorageUsage, HpcUsage, Contact)  # noqa # pylint: disable=unused-import
 
@@ -12,6 +12,7 @@ logger = logging.getLogger(__name__)
 # def yearly_usage(request, year):
 #     return JsonResponse({'timestamp': year_to_timestamp(year)})
 
+@check_required_query_args(('email', 'start', 'end'))
 @verify_product_no
 def usage_list(request, product_no):
     """List usage of a product in a period defined by start and end"""
@@ -19,12 +20,14 @@ def usage_list(request, product_no):
     return _usage_list(email, product_no, start, end)
 
 
+@check_required_query_args(('email', ))
 @verify_product_no
 def monthly_usage_list(request, product_no, year, month):
     """List usage of a product in a month of a year"""
     return _usage_list(request.GET['email'], product_no, *month_to_start_end_timestamps(year, month))
 
 
+@check_required_query_args(('email', 'start', 'end'))
 @verify_product_no
 def usage_summary(request, product_no):
     """List usage summary of a product in a period defined by start and end by orderline"""
