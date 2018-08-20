@@ -18,7 +18,3 @@ class HpcIngester(UsageIngester):
     def save_config(self, orderline, usage):
         # HPC does not have any configuration
         pass
-
-    def get_fee_field_value(self, usage, field_name):
-        """Override base method to convert cpu_seconds to cpu hours"""
-        return math.ceil(super().get_fee_field_value(usage, field_name)) / 3600
