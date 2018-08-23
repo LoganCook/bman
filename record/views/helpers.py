@@ -7,6 +7,7 @@ from django.http import JsonResponse
 from utils import get_class_names
 from ..models import (TangocloudvmUsage, NectarvmUsage, StorageUsage, HpcUsage, Contact)  # noqa # pylint: disable=unused-import
 
+
 logger = logging.getLogger(__name__)
 
 _current_module = sys.modules[__name__]
@@ -75,6 +76,20 @@ def check_required_query_args(required_args):
 
         return wrapper
     return outer
+
+
+def verify_bearer_header(func):
+    """Verify if a request has Authorization header, type is Bearer"""
+
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        request = args[0]
+        if 'HTTP_AUTHORIZATION' in request.META \
+                and request.META['HTTP_AUTHORIZATION'].startswith('Bearer'):
+            return func(*args, **kwargs)
+        return unauthorized()
+
+    return wrapper
 
 
 def get_usage_class(product_no):

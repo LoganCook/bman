@@ -1,10 +1,12 @@
 from django.db.models import F
 
 from ..models import Account, Order
-from .helpers import convert_qs
+from .helpers import convert_qs, verify_bearer_header
+from oidc.decode import decode
 from . import usage, fee, price  # noqa # pylint: disable=unused-import
 
 
+@verify_bearer_header
 def account(request):
     return convert_qs(Account.list(), ('dynamics_id', 'name', 'parent'))
 
