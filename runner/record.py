@@ -1,6 +1,7 @@
 """Django settings for record project."""
 
 import os
+import json
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -131,3 +132,10 @@ LOGGING = {
         },
     },
 }
+
+with open(os.path.join(BASE_DIR, 'config_oidc.json')) as jf:
+    oidc = json.load(jf)
+    OIDC_RESOURCE = oidc['RESOURCE']
+    OIDC_AUTHORITY_HOST_URL = oidc['AUTHORITY_HOST_URL']
+    OIDC_CLIENT_ID = oidc['CLIENT_ID']
+    OIDC_CLIENT_SECRET = oidc['CLIENT_SECRET']
