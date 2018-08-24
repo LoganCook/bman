@@ -1,6 +1,7 @@
 from functools import wraps
 import logging
 import sys
+import re
 
 from django.http import JsonResponse
 
@@ -90,6 +91,18 @@ def verify_bearer_header(func):
         return unauthorized()
 
     return wrapper
+
+
+AUTHORIZATION_BEARER = re.compile('^Bearer ([^ \t\n\r\f\v]+)$')
+
+
+def extract_access_token(request):
+    """Extract access_token from Authorization header"""
+    if 'HTTP_AUTHORIZATION' in request.META:
+        authorization_header = AUTHORIZATION_BEARER.match(request.META['HTTP_AUTHORIZATION'])
+        if authorization_header:
+            return authorization_header.group(1)
+    return None
 
 
 def get_usage_class(product_no):
