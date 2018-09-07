@@ -3,6 +3,7 @@ Ingest usage json created by reporting-unified.usage
 """
 
 import logging
+import json
 
 from django.core.management.base import BaseCommand
 
@@ -19,9 +20,9 @@ class Command(BaseCommand):
     help = 'Ingest data from a BMAN and usage endpoints'
 
     def add_arguments(self, parser):
-        parser.add_argument('url', help='url of endpoint of pricelist API')
-        parser.add_argument('-d', '--date',
-                            help='Date of prices are valid from (%%Y%%m%%d)')
+        parser.add_argument('--url', help='url of endpoint of pricelist API')
+        parser.add_argument('--file', help='file of pricelist')
+        parser.add_argument('-d', '--date', help='Date of prices are valid from (%%Y%%m%%d)')
 
     def handle(self, *args, **options):
         # /api/pricelist/
@@ -66,7 +67,15 @@ class Command(BaseCommand):
             return price
 
         valid_ts = None
-        prices = get_json(options['url'])
+
+        # Get prices from either a URL or a file
+        prices = None
+        if options['url'] is not None:
+            prices = get_json(options['url'])
+        elif options['file'] is not None:
+            with open(options['file'], 'r') as jf:
+                prices = json.load(jf)
+
         if options['date']:
             valid_ts = date_string_to_timestamp(options['date'])
         fields = ('pricelevel', 'productpricelevelid', 'productid', 'product',
