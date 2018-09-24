@@ -9,7 +9,7 @@ logger = logging.getLogger(__name__)
 
 class Account(models.Model):
     """CRM Account entities in maximal of two levels"""
-    dynamics_id = models.CharField(max_length=32, null=False, blank=False)
+    dynamics_id = models.CharField(max_length=36, null=False, blank=False)
     name = models.CharField(max_length=200, null=False, blank=False)
     parent = models.ForeignKey('self', null=True)
 
@@ -87,7 +87,7 @@ MANAGED_ACCOUNT_NOT_FOUND = "MANAGED ACCOUNT NOT FOUND"
 
 class Contact(models.Model):
     """Contact, a person"""
-    dynamics_id = models.CharField(max_length=32, null=False, blank=False)
+    dynamics_id = models.CharField(max_length=36, null=False, blank=False)
     account = models.ForeignKey(Account)
     name = models.CharField('full name', max_length=100, null=False, blank=False)
     email = models.EmailField('email address', null=False, blank=False)
@@ -145,7 +145,7 @@ class Product(models.Model):
     parent: used in either pseudo or super product
     type: used in deciding how calculation is done
     """
-    dynamics_id = models.CharField(max_length=32, null=False, blank=False)
+    dynamics_id = models.CharField(max_length=36, null=False, blank=False)
     name = models.CharField(max_length=200, null=False, blank=False)
     no = models.CharField(max_length=200, null=True)
     # type - Miscellaneous Charges:pseudo product
@@ -213,7 +213,7 @@ class PriceFinder(object):
 
 class Order(models.Model):
     """Summary of purchases"""
-    dynamics_id = models.CharField(max_length=32, default=None)
+    dynamics_id = models.CharField(max_length=36, default=None)
     name = models.CharField(max_length=200, default=None)
     no = models.CharField(max_length=20, unique=True, default=None)
     description = models.TextField()
@@ -276,7 +276,7 @@ class Price(models.Model):
     date: when a price amount has changed
     """
     # productpricelevelid
-    dynamics_id = models.CharField(max_length=32, default=None)
+    dynamics_id = models.CharField(max_length=36, default=None)
     list_name = models.CharField(max_length=100, default=None)
     product = models.ForeignKey(Product)
     unit = models.CharField(max_length=20)

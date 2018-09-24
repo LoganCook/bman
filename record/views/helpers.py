@@ -80,10 +80,10 @@ def require_auth(func):
         except:
             return unauthorized()
         logger.debug("Sent token: '%s'", token)
-        auth_response = requests.get("https://beta.reporting.ersa.edu.au/auth?secret=%s" % token)   # FIXME: Specify URL in config file.
+        auth_response = requests.get("https://beta.reporting.ersa.edu.au/auth?secret=%s" % token)   # FIXME: Specify URL in config file instead.
         if auth_response.status_code == 200:
             auth_data = auth_response.json()
-            logger.debug("Sent email: '%s' Authenticated email: '%s'", email, auth_data['email'])
+            logger.debug("Sent email: '%s', Authenticated email: '%s'", email, auth_data['email'])
             if auth_data['email'] != email:
                 return unauthorized()
 
@@ -95,7 +95,7 @@ def require_auth(func):
                     break
 
         if success:
-            logger.debug("Authenticated access OK for user with token '%s'", success)
+            logger.debug("Authenticated: '%s'", success)
             return func(*args, **kwargs)
         else:
             return unauthorized()
