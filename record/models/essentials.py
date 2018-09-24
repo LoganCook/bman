@@ -97,7 +97,7 @@ class Contact(models.Model):
 
     @staticmethod
     def is_ersa_email(email):
-        return email.endswith('ersa.edu.au')
+        return email.endswith('@ersa.edu.au')
 
     @classmethod
     def get_by_email(cls, email):

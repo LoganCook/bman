@@ -3,7 +3,7 @@
 from date_helpers import month_to_start_end_timestamps
 from ..models import Contact, Fee
 from .helpers import (convert_qs, convert_list, verify_product_no,
-                      check_required_query_args, require_valid_email,
+                      check_required_query_args, require_valid_email, require_auth,
                       unauthorized, get_timestamps_email, get_usage_class)
 
 
@@ -21,6 +21,7 @@ def fee_list(request):
 
 
 @check_required_query_args(('email', 'start', 'end'))
+@require_auth
 @require_valid_email
 def fee_summary(request):
     start, end, email = get_timestamps_email(request)
@@ -30,6 +31,7 @@ def fee_summary(request):
 
 @check_required_query_args(('email', 'start', 'end'))
 @verify_product_no
+@require_auth
 @require_valid_email
 def fee_list_by_prod_range(request, product_no):
     start, end, email = get_timestamps_email(request)
@@ -38,6 +40,7 @@ def fee_list_by_prod_range(request, product_no):
 
 @check_required_query_args(('email', 'start', 'end'))
 @verify_product_no
+@require_auth
 @require_valid_email
 def fee_summary_by_prod_range(request, product_no):
     start, end, email = get_timestamps_email(request)

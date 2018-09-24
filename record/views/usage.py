@@ -1,7 +1,7 @@
 from date_helpers import month_to_start_end_timestamps
 
 from .helpers import (convert_qs, convert_list, verify_product_no,
-                      check_required_query_args, require_valid_email,
+                      check_required_query_args, require_valid_email, require_auth,
                       get_timestamps_email, get_usage_class)
 from ..models import Contact
 from ..models.essentials import MANAGED_ACCOUNT_NOT_FOUND
@@ -9,6 +9,7 @@ from ..models.essentials import MANAGED_ACCOUNT_NOT_FOUND
 
 @check_required_query_args(('email', 'start', 'end'))
 @verify_product_no
+@require_auth
 @require_valid_email
 def usage_list(request, product_no):
     """List usage of a product in a period defined by start and end"""
@@ -18,6 +19,7 @@ def usage_list(request, product_no):
 
 @check_required_query_args(('email', ))
 @verify_product_no
+@require_auth
 @require_valid_email
 def monthly_usage_list(request, product_no, year, month):
     """List usage of a product in a month of a year"""
@@ -26,6 +28,7 @@ def monthly_usage_list(request, product_no, year, month):
 
 @check_required_query_args(('start', 'end', 'email'))
 @verify_product_no
+@require_auth
 @require_valid_email
 def usage_simple(request, product_no):
     """List of all records of usage filtered by product_no only with their native fields"""

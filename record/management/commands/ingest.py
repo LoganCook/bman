@@ -174,8 +174,9 @@ class Command(BaseCommand):
             order_values = extractor.get_order()
             # any account can be a biller
             biller = parent_account if parent_account.name == extractor.get_biller() else child_account
-            assert biller is not None
-            assert manager is not None
+            if biller == None:
+                logger.error('No biller for %s', order_values)
+                continue
             order_values['biller'] = biller
             order_values['manager'] = manager
             try:

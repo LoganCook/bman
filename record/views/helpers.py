@@ -7,6 +7,11 @@ from django.http import JsonResponse
 from utils import get_class_names
 from ..models import (TangocloudvmUsage, NectarvmUsage, StorageUsage, HpcUsage, Contact)  # noqa # pylint: disable=unused-import
 
+import requests
+from flask import Flask, request
+import uuid
+from sqlalchemy.dialects.postgresql import UUID
+
 logger = logging.getLogger(__name__)
 
 _current_module = sys.modules[__name__]
@@ -57,6 +62,45 @@ def require_valid_email(func):
         return func(*args, **kwargs)
 
     return wrapper
+
+def require_auth(func):
+    """
+    Authenticate via the external reporting-auth service.
+
+    User needs to have correct email, secret and permission for the endpoint.
+    """
+
+    @wraps(func)
+    def decorated(*args, **kwargs):
+        """Check the header."""
+        success = False
+        try:
+            token = args[0].META["HTTP_X_ERSA_AUTH_TOKEN"]
+            email = args[0].GET["email"]
+        except:
+            return unauthorized()
+        logger.debug("Sent token: '%s'", token)
+        auth_response = requests.get("https://beta.reporting.ersa.edu.au/auth?secret=%s" % token)   # FIXME: Specify URL in config file.
+        if auth_response.status_code == 200:
+            auth_data = auth_response.json()
+            logger.debug("Sent email: '%s' Authenticated email: '%s'", email, auth_data['email'])
+            if auth_data['email'] != email:
+                return unauthorized()
+
+            # Check specific endpoint permission out of all of them.
+            for endpoint in auth_data["endpoints"]:
+                success = True
+                if endpoint["name"] == "record":
+                    success = True
+                    break
+
+        if success:
+            logger.debug("Authenticated access OK for user with token '%s'", success)
+            return func(*args, **kwargs)
+        else:
+            return unauthorized()
+
+    return decorated
 
 
 def check_required_query_args(required_args):
