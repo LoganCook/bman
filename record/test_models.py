@@ -82,18 +82,20 @@ class ProductTestCase(TestCase):
 
 
 class OrderTestCase(TestCase):
-    manager_email = 'test.manager@ersa.edu.au'
-    biller = Account.objects.create(name='biller', dynamics_id=DUMMY_DYNAMICS_ID)
-    contact = Contact.objects.create(account_id=biller.pk, dynamics_id=DUMMY_DYNAMICS_ID, name='test manager', email=manager_email)
+    MANAGER_EMAIL = 'test.manager@ersa.edu.au'
     order_content = {
-        "biller": biller,
-        "manager": contact,
+        "biller": None,
+        "manager": None,
         "name": "test order",
-        "no": "unique eRSA order no",
+        "no": None,
         "dynamics_id": DUMMY_DYNAMICS_ID,
         "description": "description is optional",
         "price_list": "Member's list"
     }
+
+    def setUp(self):
+        self.order_content["biller"] = Account.objects.create(name='biller', dynamics_id=DUMMY_DYNAMICS_ID)
+        self.order_content["manager"] = Contact.objects.create(account_id=self.order_content["biller"].pk, dynamics_id=DUMMY_DYNAMICS_ID, name='test manager', email=self.MANAGER_EMAIL)
 
     def test_create_order(self):
         for item in ('name', 'no', 'dynamics_id', 'price_list'):
@@ -103,16 +105,19 @@ class OrderTestCase(TestCase):
                     Order.objects.create(**self.order_content)
             self.order_content[item] = removed
 
+        self.order_content["no"] = "test_create_order"
         order_created = Order.objects.create(**self.order_content)
         for k, v in self.order_content.items():
             self.assertEqual(v, getattr(order_created, k))
 
     def test_order_no_uniqueness(self):
+        self.order_content["no"] = "test_order_no_uniqueness"
         Order.objects.create(**self.order_content)
         with self.assertRaises(django.db.utils.IntegrityError):
             Order.objects.create(**self.order_content)
 
     def test_get_details(self):
+        self.order_content["no"] = "test_get_details"
         order = Order.objects.create(**self.order_content)
 
         demo_product, _ = Product.objects.get_or_create(name='demo product', dynamics_id=DUMMY_DYNAMICS_ID)

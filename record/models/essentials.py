@@ -215,7 +215,7 @@ class Order(models.Model):
     """Summary of purchases"""
     dynamics_id = models.CharField(max_length=36, default=None)
     name = models.CharField(max_length=200, default=None)
-    no = models.CharField(max_length=20, unique=True, default=None)
+    no = models.CharField(max_length=200, unique=True, default=None)
     description = models.TextField()
     biller = models.ForeignKey(Account)
     manager = models.ForeignKey(Contact)
@@ -279,7 +279,7 @@ class Price(models.Model):
     dynamics_id = models.CharField(max_length=36, default=None)
     list_name = models.CharField(max_length=100, default=None)
     product = models.ForeignKey(Product)
-    unit = models.CharField(max_length=20)
+    unit = models.CharField(max_length=200)
     amount = models.FloatField()
     date = models.IntegerField(default=int(datetime.datetime.now().timestamp()))
 
