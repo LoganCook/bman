@@ -8,6 +8,8 @@ from .helpers import (convert_qs, convert_list, verify_product_no,
 
 
 @check_required_query_args(('email', 'start', 'end'))
+@require_auth
+@require_valid_email
 def fee_list(request):
     """List all records of Fee with their native fields for eRSA only"""
     start, end, email = get_timestamps_email(request)
