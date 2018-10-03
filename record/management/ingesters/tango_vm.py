@@ -30,7 +30,7 @@ class TangocloudvmIngester(UsageIngester):
             Tangocloudvm.objects.get_or_create(**data)
         except django.db.utils.IntegrityError as err:
             msg = str(err)
-            if msg.find('UNIQUE constraint failed') > -1:
+            if msg.lower().find('unique constraint') > -1:
                 # this just needs an update to handle OS change
                 logger.warning("UNIQUE constraint failed: tango_config=%s", data)
                 config = Tangocloudvm.objects.get(orderline_id=orderline.id)
