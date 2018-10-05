@@ -379,7 +379,7 @@ class Usage(models.Model):
             return result
 
         # convert a queryset to a list of dict
-        main_fields = 'name', 'no', 'account', 'unit', 'managerName', 'managerEmail', 'price', 'identifier'
+        main_fields = 'name', 'no', 'account', 'unit', 'managerName', 'managerEmail', 'price', 'identifier', 'quantity' # TODO: move quantity to storage only to represent allocation
         extract_config = cls.get_extract_config_method()
         sum_usage = cls.get_sum_usage_method()
         results = []
