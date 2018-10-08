@@ -48,7 +48,7 @@ class XfsIngester(BaseStorageIngester):
 class HnasvvIngester(BaseStorageIngester):
     def save_config(self, orderline, usage):
         # usage is not used for storage types
-        super()._save_config(orderline, 'HNAS Virtual Volume')
+        super()._save_config(orderline, 'HNAS VV')
 
     def save(self, start, end, orderline, usage, calculate_fee=False):
         # convert MB - > GB, make it availabe to later use in this dict
@@ -61,7 +61,7 @@ class HnasvvIngester(BaseStorageIngester):
 class HnasfsIngester(BaseStorageIngester):
     def save_config(self, orderline, usage):
         # usage is not used for storage types
-        super()._save_config(orderline, 'HNAS File System')
+        super()._save_config(orderline, 'HNAS FS')
 
     def save(self, start, end, orderline, usage, calculate_fee=False):
         # convert MB - > GB, make it availabe to later use in this dict

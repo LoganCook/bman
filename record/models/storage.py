@@ -7,7 +7,7 @@ from .essentials import Orderline, Usage
 
 
 class Storage(models.Model):
-    """Configuration of all storage types: HNAS Virtual Volume, HNAS File System, XFS, HCP"""
+    """Configuration of all storage types: HNAS VV, HNAS FS, XFS, HCP"""
     orderline = models.ForeignKey(Orderline)
     type = models.CharField(max_length=30)
 
