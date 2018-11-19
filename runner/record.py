@@ -27,10 +27,12 @@ INSTALLED_APPS = [
     # 'django.contrib.sessions',
     # 'django.contrib.messages',
     # 'django.contrib.staticfiles',
-    'record'
+    'record',
+    'corsheaders',
+    'sslserver'
 ]
 
-# MIDDLEWARE = [
+MIDDLEWARE = [
 #     'django.middleware.security.SecurityMiddleware',
 #     'django.contrib.sessions.middleware.SessionMiddleware',
 #     'django.middleware.common.CommonMiddleware',
@@ -38,7 +40,9 @@ INSTALLED_APPS = [
 #     'django.contrib.auth.middleware.AuthenticationMiddleware',
 #     'django.contrib.messages.middleware.MessageMiddleware',
 #     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-# ]
+    'corsheaders.middleware.CorsMiddleware',
+    'django.middleware.common.CommonMiddleware'
+]
 
 ROOT_URLCONF = 'record.urls'
 
@@ -131,3 +135,22 @@ LOGGING = {
         },
     },
 }
+
+CORS_ORIGIN_ALLOW_ALL = True
+CORS_ALLOW_HEADERS = (
+    'accept',
+    'accept-encoding',
+    'authorization',
+    'content-type',
+    'dnt',
+    'origin',
+    'user-agent',
+    'x-csrftoken',
+    'x-requested-with',
+    'x-ersa-auth-token',
+)
+CORS_ALLOW_METHODS = (
+    'GET',
+    'OPTIONS',
+    'HEAD'
+)

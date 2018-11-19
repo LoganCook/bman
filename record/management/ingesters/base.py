@@ -221,6 +221,8 @@ class UsageIngester:
         Price list's effective start and end timestamps are identical
         to usage duration. It calls _get_duration_price_of.
 
+        The old style of billing would use a duration of 2628000 (seconds for one month)
+
         :param str product_no: production number defined in CRM
         :param str list_name: price list name
         :param int start: start timestamp of query period
