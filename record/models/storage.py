@@ -1,7 +1,8 @@
 """Tango VM configuration and usage"""
 
 from django.db import models
-from django.db.models import Avg
+from django.db.models import Avg, Value, IntegerField, F, FloatField
+from django.db.models.functions import Cast
 
 from .essentials import Orderline, Usage
 
@@ -40,5 +41,6 @@ class StorageUsage(Usage):
 
     @classmethod
     def get_sum_usage_method(cls):
+        # TODO: Would be better to ceil blocks here.
         return lambda orderline: orderline.storageusage_set.values('orderline_id').\
-            annotate(avgUsage=Avg('usage'))[0]
+            annotate(avgUsage=Avg('usage'), blocks=Cast(F('usage') / Value(250, IntegerField()), output_field=FloatField()))[0]
