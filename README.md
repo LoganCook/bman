@@ -13,7 +13,7 @@ to set up __nginx__ and __gunicorn__ for an application. Basically, it creates a
 to run the application and map this service to a URL served by __nginx__.
 
 _Note_: this script does not do everything to get the application up running as database connection
-information is not handled by it. This is better done after boot (manual work).
+information is not handled by it. This is better done after boot (manual work). The `SECRET_KEY` can be generated using `django.core.management.utils.get_random_secret_key()`.
 
 All the configuration files are assumed coming from `runner` directory. After creating
 `runner/bman.py` with the correct information, for a package that has been copied in
